@@ -1,5 +1,3 @@
 ## 클래스 다이어그램
 
-[클래스 다이어그램 바로 보기](https://app.diagrams.net/#Uhttps%3A%2F%2Fraw.githubusercontent.com%2FHJ-polarbear%2FDHL_Factory%2FDevelop%2Fdocs%2FDHL%2520Class.drawio)
-
-[다이어그램 원본 파일](docs/DHL%20Class.drawio)
+[클래스 다이어그램 ](https://app.diagrams.net/#G1R0a-1X00T9iQ50j7Ih3RWDlofHy5f7zo#%7B%22pageId%22%3A%220%22%7D)
