@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 17752d400139f7e408ecd5c3d9d320bd
+guid: 64406fbe11f5c7e48977985a8f8c41e5
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4280988894703441847
-    second: everytexture.com-stock-misc-texture-00132_0
+      213: -6630285886989681968
+    second: "\uC2A4\uD06C\uB9B0\uC0F7_29-10-2026_95253_blog.naver.com_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -115,13 +115,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: everytexture.com-stock-misc-texture-00132_0
+      name: "\uC2A4\uD06C\uB9B0\uC0F7_29-10-2026_95253_blog.naver.com_0"
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 3024
-        height: 4032
+        width: 881
+        height: 588
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -130,8 +130,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7b7d034d7b0296b30800000000000000
-      internalID: 4280988894703441847
+      spriteID: 0dab1b25d1e7cf3a0800000000000000
+      internalID: -6630285886989681968
       vertices: []
       indices: 
       edges: []
@@ -150,7 +150,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      everytexture.com-stock-misc-texture-00132_0: 4280988894703441847
+      "\uC2A4\uD06C\uB9B0\uC0F7_29-10-2026_95253_blog.naver.com_0": -6630285886989681968
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
