@@ -5,8 +5,10 @@ public class InspectionController : MonoBehaviour
 {
     [Header("연결할 오브젝트")]
     public LinearConveyor inspectionConveyor;
+    public LinearConveyor inputConveyor;
     public Transform stopper;
     public Transform centerPoint;
+    public ParcelSpawner parcelSpawner;
 
     [Header("스토퍼 이동")]
     public float lowerDistance = 0.5f;
@@ -62,7 +64,16 @@ public class InspectionController : MonoBehaviour
         }
     }
 
-  
+    private void Update()
+    {
+        // R 키로 로봇이 박스를 가져간 상황을 테스트
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            ReleaseParcel();
+        }
+    }
+
+
     private void OnTriggerEnter(Collider other)
     {
         if (currentParcel != null) return;
@@ -75,14 +86,32 @@ public class InspectionController : MonoBehaviour
 
         currentParcel = parcelRb;
         parcelStopped = false;
+        inputConveyor.Stop();
         Debug.Log("검사 컨베이어에 박스 진입");
     }
 
     // 나중에 로봇이 박스를 가져간 뒤 호출할 예정
     public void ReleaseParcel()
     {
+        // 검사 위치에 박스가 멈춰 있을 때만 처리
+        if (currentParcel == null || !parcelStopped)
+        {
+            return;
+        }
+
         currentParcel = null;
         parcelStopped = false;
+
         inspectionConveyor.Play();
+        inputConveyor.Play();
+
+        if (parcelSpawner != null)
+        {
+            parcelSpawner.SpawnNextParcel();
+        }
+        else
+        {
+            Debug.LogWarning("Parcel Spawner가 연결되지 않았습니다.");
+        }
     }
 }
