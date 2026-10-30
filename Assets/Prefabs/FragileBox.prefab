@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 773377573060255903}
   - component: {fileID: 8132247624390998061}
   - component: {fileID: 7749855685067790105}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FragileLabel_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 7460653156849720052}
   - component: {fileID: 2591481605107946038}
   - component: {fileID: 706409074430065592}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FragileLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -191,7 +191,7 @@ GameObject:
   - component: {fileID: 5288484297110383554}
   - component: {fileID: 1537333453395557111}
   - component: {fileID: 2070032621713552157}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FragileLabel_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -281,7 +281,7 @@ GameObject:
   - component: {fileID: 5325254358654702310}
   - component: {fileID: 2925290794093771853}
   - component: {fileID: 571715145278578716}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FragileLabel_Back
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -372,7 +372,7 @@ GameObject:
   - component: {fileID: 3304048842319470623}
   - component: {fileID: 7410685467298884142}
   - component: {fileID: 4318258585088604407}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tape
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -483,7 +483,7 @@ GameObject:
   - component: {fileID: 8089060591890706827}
   - component: {fileID: 5540201139675546184}
   - component: {fileID: 3629894458141957102}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FragileLabel_Front
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -574,7 +574,7 @@ GameObject:
   - component: {fileID: 488081856154052681}
   - component: {fileID: 6025657743540471310}
   - component: {fileID: 7755733508642548181}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tape1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -687,7 +687,7 @@ GameObject:
   - component: {fileID: 3428994674301108525}
   - component: {fileID: 524503926116931343}
   - component: {fileID: 2960237462834608559}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FragileBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -704,7 +704,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 4.01, y: 2.26, z: -5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2894141711511242790}
@@ -834,7 +834,7 @@ GameObject:
   - component: {fileID: 6545062537888526683}
   - component: {fileID: 3965822183715603231}
   - component: {fileID: 6435007629667637763}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tape2
   m_TagString: Untagged
   m_Icon: {fileID: 0}

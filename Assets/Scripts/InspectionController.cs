@@ -34,17 +34,17 @@ public class InspectionController : MonoBehaviour
 
     private void Start()
     {
-        // 에디터에서 설정한 위치가 스토퍼가 올라온 위치
+        // 에디터에서 배치한 위치를 올라온 위치로 사용
         stopperUpPosition = stopper.localPosition;
         stopperDownPosition = stopperUpPosition - Vector3.up * lowerDistance;
 
-        // 시작할 때는 스토퍼를 내려둠
+        // 시작할 때 스토퍼를 내려둠
         stopper.localPosition = stopperDownPosition;
     }
 
     private void Update()
     {
-        // 임시 테스트: R 키를 누르면 박스 출발
+        // R 키는 로봇 처리 완료를 대신하는 임시 테스트
         if (Input.GetKeyDown(KeyCode.R))
         {
             ReleaseParcel();
@@ -53,7 +53,7 @@ public class InspectionController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // 박스가 있으면 스토퍼를 올리고, 없으면 내림
+        // 검사 중인 박스가 있으면 스토퍼 상승
         Vector3 target = currentParcel != null
             ? stopperUpPosition
             : stopperDownPosition;
@@ -66,9 +66,11 @@ public class InspectionController : MonoBehaviour
 
         if (currentParcel == null || parcelStopped) return;
 
-        // 검사대 부모 기준으로 박스와 중앙 지점의 위치 비교
+        // 검사 컨베이어 부모 기준으로 중앙 위치 비교
         Vector3 localParcelPosition =
-            transform.parent.InverseTransformPoint(currentParcel.worldCenterOfMass);
+            transform.parent.InverseTransformPoint(
+                currentParcel.worldCenterOfMass
+            );
 
         Vector3 localCenterPosition =
             transform.parent.InverseTransformPoint(centerPoint.position);
@@ -84,36 +86,42 @@ public class InspectionController : MonoBehaviour
 
             Debug.Log("박스가 검사 위치에 도착했습니다.");
 
-            // 나중에 카메라·CNN 기능 연결
+            // 나중에 카메라와 CNN 기능을 연결할 이벤트
             onParcelReady?.Invoke();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // 이미 검사 중인 박스가 있으면 무시
+        // 이미 검사 중인 박스가 있으면 추가 감지하지 않음
         if (currentParcel != null) return;
 
         Rigidbody parcelRb = other.attachedRigidbody;
 
         if (parcelRb == null) return;
 
-        // 센서가 컨베이어 자체를 감지하는 경우 제외
+        // 컨베이어 자체가 감지된 경우 제외
         if (parcelRb.GetComponent<LinearConveyor>() != null) return;
 
         currentParcel = parcelRb;
         parcelStopped = false;
 
-        // 두 입력 벨트를 함께 정지
+        // 검사 구역 진입 시 입력 벨트 정지
         inputConveyor.Stop();
         inputConveyor2.Stop();
+
+        // 박스 생성도 일시정지
+        if (parcelSpawner != null)
+        {
+            parcelSpawner.SetPaused(true);
+        }
 
         Debug.Log("검사 컨베이어에 박스 진입");
     }
 
     public void ReleaseParcel()
     {
-        // 박스가 검사 위치에 멈춰 있을 때만 처리
+        // 검사 위치에 박스가 멈춰 있을 때만 처리
         if (currentParcel == null || !parcelStopped)
         {
             return;
@@ -122,19 +130,21 @@ public class InspectionController : MonoBehaviour
         currentParcel = null;
         parcelStopped = false;
 
+        // 검사 벨트와 입력 벨트 재시작
         inspectionConveyor.Play();
-
-        // 두 입력 벨트를 함께 다시 시작
         inputConveyor.Play();
         inputConveyor2.Play();
 
+        // 박스 생성 재개
         if (parcelSpawner != null)
         {
-            parcelSpawner.SpawnNextParcel();
+            parcelSpawner.SetPaused(false);
         }
         else
         {
             Debug.LogWarning("Parcel Spawner가 연결되지 않았습니다.");
         }
+
+        Debug.Log("검사 완료: 다음 박스 이동");
     }
 }

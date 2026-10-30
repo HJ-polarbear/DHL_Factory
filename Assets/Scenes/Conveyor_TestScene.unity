@@ -167,6 +167,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b9f9b28b04738643a5daa819a1c6604, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RoboLacyTech.Conveyors::RoboLacyTech.Conveyors.LinearConveyor
+--- !u!114 &144912435 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+  m_PrefabInstance: {fileID: 282327917}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b9f9b28b04738643a5daa819a1c6604, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RoboLacyTech.Conveyors::RoboLacyTech.Conveyors.LinearConveyor
 --- !u!1 &183534072
 GameObject:
   m_ObjectHideFlags: 0
@@ -195,8 +206,8 @@ Transform:
   m_GameObject: {fileID: 183534072}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.262, z: 1}
-  m_LocalScale: {x: 1.2, y: 1.5, z: 0.1}
+  m_LocalPosition: {x: 0, y: 2.019, z: 1}
+  m_LocalScale: {x: 1.2, y: 0.89004004, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1230911399}
@@ -397,6 +408,10 @@ PrefabInstance:
       value: "\tOutput_Inner"
       objectReference: {fileID: 0}
     - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+      propertyPath: motor.baseSpeed
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
       propertyPath: motor.direction
       value: -1
       objectReference: {fileID: 0}
@@ -576,8 +591,16 @@ PrefabInstance:
       value: Input_Outer
       objectReference: {fileID: 0}
     - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+      propertyPath: motor.baseSpeed
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
       propertyPath: motor.direction
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+      propertyPath: motor.useAcceleration
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -650,7 +673,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 388d840079744cd4cb7bc732262da117, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BinCounter
-  capacity: 3
+  capacity: 6
   emptyDelay: 1
 --- !u!1 &371305278
 GameObject:
@@ -1067,6 +1090,10 @@ PrefabInstance:
     - target: {fileID: 687775029298477574, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
       propertyPath: m_Name
       value: "\tOutput_Outer"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+      propertyPath: motor.baseSpeed
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
       propertyPath: motor.direction
@@ -1811,13 +1838,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1079597304}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.47130418, y: -0, z: -0, w: 0.88197076}
-  m_LocalPosition: {x: -4.31, y: 10.6, z: -13.92}
+  m_LocalRotation: {x: 0.52745813, y: -0, z: -0, w: 0.84958106}
+  m_LocalPosition: {x: -4.31, y: 16.72, z: -18.01}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 56.238, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 63.668, y: 0, z: 0}
 --- !u!114 &1079597308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2041,7 +2068,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 388d840079744cd4cb7bc732262da117, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BinCounter
-  capacity: 3
+  capacity: 6
   emptyDelay: 1
 --- !u!65 &1333928824
 BoxCollider:
@@ -2109,7 +2136,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 388d840079744cd4cb7bc732262da117, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BinCounter
-  capacity: 3
+  capacity: 6
   emptyDelay: 1
 --- !u!65 &1361623125
 BoxCollider:
@@ -2158,7 +2185,7 @@ Transform:
   m_GameObject: {fileID: 1366912586}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -9.33, y: 2.26, z: -4.96}
+  m_LocalPosition: {x: -15.27, y: 2.005, z: -8.199}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2180,6 +2207,11 @@ MonoBehaviour:
   - {fileID: 1988912990157572224, guid: f7c6fb1c1f045d8429e6641550d5ef10, type: 3}
   - {fileID: 8468331124368585724, guid: bab417155fc409a418b964a26493820a, type: 3}
   - {fileID: 4909275062482731306, guid: 9262fb634989b4147b005adf4c823d18, type: 3}
+  spawnInterval: 2.2
+  checkBoxSize: {x: 0.7, y: 0.7, z: 0.7}
+  parcelLayer:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &1379658622
 GameObject:
   m_ObjectHideFlags: 0
@@ -2433,8 +2465,16 @@ PrefabInstance:
       value: "\tInput_Inner"
       objectReference: {fileID: 0}
     - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+      propertyPath: motor.baseSpeed
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
       propertyPath: motor.direction
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
+      propertyPath: motor.useAcceleration
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3159,17 +3199,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1922969113 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7322374839395687234, guid: ef05b35606d9f8447b1ae7aa8f99b3f5, type: 3}
-  m_PrefabInstance: {fileID: 232755423}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b9f9b28b04738643a5daa819a1c6604, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: RoboLacyTech.Conveyors::RoboLacyTech.Conveyors.LinearConveyor
 --- !u!1 &1951718644
 GameObject:
   m_ObjectHideFlags: 0
@@ -3361,8 +3390,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InspectionController
   inspectionConveyor: {fileID: 1728640764}
-  inputConveyor: {fileID: 98406865}
-  inputConveyor2: {fileID: 1922969113}
+  inputConveyor: {fileID: 144912435}
+  inputConveyor2: {fileID: 98406865}
   stopper: {fileID: 183534073}
   centerPoint: {fileID: 2048856526}
   parcelSpawner: {fileID: 1366912588}
@@ -4079,16 +4108,28 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4318811123364908120, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4318811123364908120, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4318811123364908120, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4318811123364908120, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.13
+      value: -3.39
       objectReference: {fileID: 0}
     - target: {fileID: 4318811123364908120, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.26
+      value: 2.005
       objectReference: {fileID: 0}
     - target: {fileID: 4318811123364908120, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.03
+      value: -8.199
       objectReference: {fileID: 0}
     - target: {fileID: 5131119855505455910, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
       propertyPath: m_IsActive
@@ -4232,6 +4273,10 @@ PrefabInstance:
     - target: {fileID: 1053207509344242047, guid: 03d420b3476b92a48be7cb1709a603c6, type: 3}
       propertyPath: motor.direction
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2407277131425630790, guid: 03d420b3476b92a48be7cb1709a603c6, type: 3}
+      propertyPath: motor.baseSpeed
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 2407277131425630790, guid: 03d420b3476b92a48be7cb1709a603c6, type: 3}
       propertyPath: motor.direction
