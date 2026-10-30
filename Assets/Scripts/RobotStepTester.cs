@@ -57,7 +57,8 @@ public class RobotStepTester : MonoBehaviour
 
         // 큐브의 초기 위치 저장 (리셋용)
         initialCubePos = targetCube.position;
-        initialCubeRot = targetCube.rotation;
+        //initialCubeRot = targetCube.rotation;
+        
     }
 
     void Update()
@@ -80,55 +81,96 @@ public class RobotStepTester : MonoBehaviour
     /// </summary>
     public void ExecuteNextStep()
     {
+        Quaternion topDownRot = Quaternion.Euler(90f, 0f, 0f);
         if (isMoving) return;
-
         switch ((Step)currentStep)
         {
             case Step.Waiting:
                 statusMessage = "1. 목표 상단 접근 중...";
                 Vector3 pickAbove = targetCube.position + Vector3.up * approachHeight;
-                StartCoroutine(MoveTargetRoutine(pickAbove, targetCube.rotation, () => currentStep = 1));
+                // targetCube.rotation 대신 topDownRot 적용
+                StartCoroutine(MoveTargetRoutine(pickAbove, topDownRot, () => currentStep = 1));
                 break;
 
             case Step.ApproachPick:
                 statusMessage = "2. 하강 중...";
-                StartCoroutine(MoveTargetRoutine(targetCube.position, targetCube.rotation, () => currentStep = 2));
+                // targetCube.rotation 대신 topDownRot 적용
+                StartCoroutine(MoveTargetRoutine(targetCube.position, topDownRot, () => currentStep = 2));
                 break;
-
             case Step.DescentPick:
                 statusMessage = "3. 물건 잡기 (Grip)...";
                 targetCube.SetParent(robotIK.transform); // 손에 부착
                 currentStep = 3;
                 break;
-
             case Step.Grip:
                 statusMessage = "4. 물건 상승 중...";
                 Vector3 pickAbove2 = targetCube.position + Vector3.up * approachHeight;
-                StartCoroutine(MoveTargetRoutine(pickAbove2, targetCube.rotation, () => currentStep = 4));
+                StartCoroutine(MoveTargetRoutine(pickAbove2, topDownRot, () => currentStep = 4));
                 break;
 
             case Step.LiftPick:
                 statusMessage = "5. 이송 중 (Transfer)...";
                 Vector3 dropAbove = dropPosition.position + Vector3.up * approachHeight;
-                StartCoroutine(MoveTargetRoutine(dropAbove, dropPosition.rotation, () => currentStep = 5));
+                StartCoroutine(MoveTargetRoutine(dropAbove, topDownRot, () => currentStep = 5));
                 break;
 
             case Step.Transfer:
                 statusMessage = "6. 내려놓기 하강 중...";
-                StartCoroutine(MoveTargetRoutine(dropPosition.position, dropPosition.rotation, () => currentStep = 6));
-                break;
-
-            case Step.DescentDrop:
-                statusMessage = "7. 물건 놓기 (Release)...";
-                targetCube.SetParent(null); // 부모 해제
-                currentStep = 7;
+                StartCoroutine(MoveTargetRoutine(dropPosition.position, topDownRot, () => currentStep = 6));
                 break;
 
             case Step.Release:
                 statusMessage = "8. 복귀 전 상승 중...";
                 Vector3 dropAbove2 = dropPosition.position + Vector3.up * approachHeight;
-                StartCoroutine(MoveTargetRoutine(dropAbove2, dropPosition.rotation, () => currentStep = 8));
+                StartCoroutine(MoveTargetRoutine(dropAbove2, topDownRot, () => currentStep = 8));
                 break;
+            //switch ((Step)currentStep)
+            //{
+            //    case Step.Waiting:
+            //        statusMessage = "1. 목표 상단 접근 중...";
+            //        Vector3 pickAbove = targetCube.position + Vector3.up * approachHeight;
+            //        StartCoroutine(MoveTargetRoutine(pickAbove, targetCube.rotation, () => currentStep = 1));
+            //        break;
+
+            //    case Step.ApproachPick:
+            //        statusMessage = "2. 하강 중...";
+            //        StartCoroutine(MoveTargetRoutine(targetCube.position, targetCube.rotation, () => currentStep = 2));
+            //        break;
+
+            //    case Step.DescentPick:
+            //        statusMessage = "3. 물건 잡기 (Grip)...";
+            //        targetCube.SetParent(robotIK.transform); // 손에 부착
+            //        currentStep = 3;
+            //        break;
+
+            //    case Step.Grip:
+            //        statusMessage = "4. 물건 상승 중...";
+            //        Vector3 pickAbove2 = targetCube.position + Vector3.up * approachHeight;
+            //        StartCoroutine(MoveTargetRoutine(pickAbove2, targetCube.rotation, () => currentStep = 4));
+            //        break;
+
+            //    case Step.LiftPick:
+            //        statusMessage = "5. 이송 중 (Transfer)...";
+            //        Vector3 dropAbove = dropPosition.position + Vector3.up * approachHeight;
+            //        StartCoroutine(MoveTargetRoutine(dropAbove, dropPosition.rotation, () => currentStep = 5));
+            //        break;
+
+            //    case Step.Transfer:
+            //        statusMessage = "6. 내려놓기 하강 중...";
+            //        StartCoroutine(MoveTargetRoutine(dropPosition.position, dropPosition.rotation, () => currentStep = 6));
+            //        break;
+
+            //    case Step.DescentDrop:
+            //        statusMessage = "7. 물건 놓기 (Release)...";
+            //        targetCube.SetParent(null); // 부모 해제
+            //        currentStep = 7;
+            //        break;
+
+            //    case Step.Release:
+            //        statusMessage = "8. 복귀 전 상승 중...";
+            //        Vector3 dropAbove2 = dropPosition.position + Vector3.up * approachHeight;
+            //        StartCoroutine(MoveTargetRoutine(dropAbove2, dropPosition.rotation, () => currentStep = 8));
+            //        break;
 
             case Step.LiftDrop:
                 statusMessage = "9. 초기 대기 상태로 복귀 완료";

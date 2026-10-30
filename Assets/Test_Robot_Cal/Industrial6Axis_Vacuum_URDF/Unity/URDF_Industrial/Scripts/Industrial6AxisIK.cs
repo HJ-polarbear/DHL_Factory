@@ -72,6 +72,7 @@ public class Industrial6AxisIK : MonoBehaviour
             joints[i].xDrive = d;
             q[i] = d.target * Mathf.Deg2Rad;
         }
+        //로봇의 시작 팔오루 타겟 위치
         if (snapTargetOnStart && target != null)
         {
             //FK(q, out var R, out var p);
