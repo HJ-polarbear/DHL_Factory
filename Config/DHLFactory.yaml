@@ -2,20 +2,22 @@ behaviors:
   DHLFactory:
     trainer_type: ppo
     hyperparameters:
-      batch_size: 128            # 시각 학습을 위해 배치 크기 증가
-      buffer_size: 2048          # 버퍼 크기 증가
-      learning_rate: 0.0003
-      beta: 0.005                # 탐색 엔트로피 조정
+      batch_size: 128
+      buffer_size: 2048          # 안정적인 가중치 업데이트를 위해 버퍼 확장
+      learning_rate: 0.0001      # 최적점에서 튕겨 나가지 않도록 보폭 안정화
+      learning_rate_schedule: linear  # 후반부로 갈수록 학습률을 줄여 최고 성능 유지
+      beta: 0.01                 # 적절한 탐색 유지
       epsilon: 0.2
       lambd: 0.95
       num_epoch: 3
     network_settings:
-      vis_encode_type: simple    # 기본 CNN 인코더
+      vis_encode_type: simple
       hidden_units: 128
       num_layers: 2
     reward_signals:
       extrinsic:
-        gamma: 0.9
+        gamma: 0.0               # 단발성 분류이므로 미래 할인율 0 (현재 프레임에만 집중)
         strength: 1.0
-    max_steps: 150000            # 총 학습 스텝 수
-    summary_freq: 2000
+    keep_checkpoints: 5
+    max_steps: 50000
+    summary_freq: 1000
