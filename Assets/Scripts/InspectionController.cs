@@ -26,11 +26,44 @@ public class InspectionController : MonoBehaviour
     [Header("박스 검사 이벤트")]
     public UnityEvent onParcelReady;
 
+    [Header("검사대 조명")]
+    public Light inspectionLight;
+
+    [Tooltip("대기 중 조명 색상")]
+    public Color idleColor = Color.white;
+
+    [Tooltip("검사 중 조명 색상")]
+    public Color inspectionColor = Color.yellow;
+
+    [Tooltip("검사 완료 후 조명 색상")]
+    public Color completeColor = Color.green;
+
+    [Tooltip("대기 중 조명 밝기")]
+    public float idleIntensity = 0.5f;
+
+    [Tooltip("검사 중 조명의 최소 밝기")]
+    public float blinkMinIntensity = 1f;
+
+    [Tooltip("검사 중 조명의 최대 밝기")]
+    public float blinkMaxIntensity = 3f;
+
+    [Tooltip("검사 중 조명이 초당 깜빡이는 횟수")]
+    public float blinkSpeed = 2f;
+
+    [Tooltip("검사 완료 조명 밝기")]
+    public float completeIntensity = 3f;
+
+    [Tooltip("검사 완료 조명이 켜져 있는 시간")]
+    public float completeLightDuration = 2f;
+
     private Vector3 stopperUpPosition;
     private Vector3 stopperDownPosition;
 
     private Rigidbody currentParcel;
     private bool parcelStopped;
+
+    // 완료 조명이 끝나는 시각
+    private float completeLightUntil;
 
     private void Start()
     {
@@ -40,6 +73,8 @@ public class InspectionController : MonoBehaviour
 
         // 시작할 때 스토퍼를 내려둠
         stopper.localPosition = stopperDownPosition;
+
+        UpdateInspectionLight();
     }
 
     private void Update()
@@ -49,6 +84,8 @@ public class InspectionController : MonoBehaviour
         {
             ReleaseParcel();
         }
+
+        UpdateInspectionLight();
     }
 
     private void FixedUpdate()
@@ -130,6 +167,10 @@ public class InspectionController : MonoBehaviour
         currentParcel = null;
         parcelStopped = false;
 
+        // 완료 조명을 일정 시간 표시
+        completeLightUntil =
+            Time.time + Mathf.Max(0f, completeLightDuration);
+
         // 검사 벨트와 입력 벨트 재시작
         inspectionConveyor.Play();
         inputConveyor.Play();
@@ -146,5 +187,40 @@ public class InspectionController : MonoBehaviour
         }
 
         Debug.Log("검사 완료: 다음 박스 이동");
+    }
+
+    private void UpdateInspectionLight()
+    {
+        if (inspectionLight == null) return;
+
+        // 새 박스가 검사 위치에 도착했다면 검사 조명을 우선 표시
+        if (currentParcel != null && parcelStopped)
+        {
+            inspectionLight.color = inspectionColor;
+
+            float blink = (
+                Mathf.Sin(Time.time * blinkSpeed * Mathf.PI * 2f) + 1f
+            ) * 0.5f;
+
+            inspectionLight.intensity = Mathf.Lerp(
+                blinkMinIntensity,
+                blinkMaxIntensity,
+                blink
+            );
+
+            return;
+        }
+
+        // 검사 완료 직후에는 초록색 조명 표시
+        if (Time.time < completeLightUntil)
+        {
+            inspectionLight.color = completeColor;
+            inspectionLight.intensity = completeIntensity;
+            return;
+        }
+
+        // 대기 중에는 약한 조명 유지
+        inspectionLight.color = idleColor;
+        inspectionLight.intensity = idleIntensity;
     }
 }
