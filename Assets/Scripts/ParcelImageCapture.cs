@@ -3,6 +3,11 @@ using System.Collections;
 using System.IO;
 using UnityEngine;
 
+// [추가 1] 새 Input System을 사용할 때만 포함
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
 public class ParcelImageCapture : MonoBehaviour
 {
     public enum CaptureLabel
@@ -19,6 +24,23 @@ public class ParcelImageCapture : MonoBehaviour
     public CaptureLabel captureLabel = CaptureLabel.General;
 
     private bool isSaving;
+
+    // [추가 2] F9를 누르면 사진 저장
+    private void Update()
+    {
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null &&
+            Keyboard.current.f9Key.wasPressedThisFrame)
+        {
+            SaveCapture();
+        }
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        if (Input.GetKeyDown(KeyCode.F9))
+        {
+            SaveCapture();
+        }
+#endif
+    }
 
     [ContextMenu("Save Capture")]
     public void SaveCapture()
@@ -57,7 +79,9 @@ public class ParcelImageCapture : MonoBehaviour
         {
             if (!inspectionTexture.IsCreated())
             {
-                Debug.LogError("RenderTexture가 아직 생성되지 않았습니다.");
+                Debug.LogError(
+                    "RenderTexture가 아직 생성되지 않았습니다."
+                );
                 yield break;
             }
 
@@ -97,7 +121,10 @@ public class ParcelImageCapture : MonoBehaviour
 
             string filePath = Path.Combine(folder, fileName);
 
-            File.WriteAllBytes(filePath, image.EncodeToPNG());
+            File.WriteAllBytes(
+                filePath,
+                image.EncodeToPNG()
+            );
 
             Debug.Log($"이미지 저장 완료:\n{filePath}");
         }
