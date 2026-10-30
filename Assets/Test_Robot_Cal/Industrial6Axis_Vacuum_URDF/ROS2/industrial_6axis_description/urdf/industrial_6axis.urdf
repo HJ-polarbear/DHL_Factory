@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!-- 6-axis industrial robot (realvirtual Robot.fbx) -> URDF. Zero pose = FBX pose (upper arm vertical, forearm horizontal). -->
+<robot name="industrial_6axis">
+  <link name="base_link">
+    <inertial><origin xyz="-0.0588 0.0000 0.0995" rpy="0 0 0"/><mass value="60"/>
+      <inertia ixx="1.52155" ixy="0" ixz="0" iyy="2.19012" iyz="0" izz="3.31604"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/base_link.stl"/></geometry><material name="base_link_mat"><color rgba="0.20 0.20 0.22 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/base_link.stl"/></geometry></collision>
+  </link>
+  <link name="link_1">
+    <inertial><origin xyz="0.0437 0.0489 0.4013" rpy="0 0 0"/><mass value="55"/>
+      <inertia ixx="2.56251" ixy="0" ixz="0" iyy="2.76383" iyz="0" izz="2.88628"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_1.stl"/></geometry><material name="link_1_mat"><color rgba="0.96 0.74 0.05 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_1.stl"/></geometry></collision>
+  </link>
+  <link name="link_2">
+    <inertial><origin xyz="0.0000 -0.1701 0.4023" rpy="0 0 0"/><mass value="30"/>
+      <inertia ixx="2.97115" ixy="0" ixz="0" iyy="3.01072" iyz="0" izz="0.30225"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_2.stl"/></geometry><material name="link_2_mat"><color rgba="0.96 0.74 0.05 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_2.stl"/></geometry></collision>
+  </link>
+  <link name="link_3">
+    <inertial><origin xyz="0.0801 0.0501 0.0883" rpy="0 0 0"/><mass value="28"/>
+      <inertia ixx="0.82885" ixy="0" ixz="0" iyy="1.03744" iyz="0" izz="0.95007"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_3.stl"/></geometry><material name="link_3_mat"><color rgba="0.96 0.74 0.05 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_3.stl"/></geometry></collision>
+  </link>
+  <link name="link_4">
+    <inertial><origin xyz="-0.2457 0.0030 -0.0001" rpy="0 0 0"/><mass value="12"/>
+      <inertia ixx="0.08542" ixy="0" ixz="0" iyy="0.49906" iyz="0" izz="0.51761"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_4.stl"/></geometry><material name="link_4_mat"><color rgba="0.96 0.74 0.05 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_4.stl"/></geometry></collision>
+  </link>
+  <link name="link_5">
+    <inertial><origin xyz="0.0000 -0.0015 -0.0000" rpy="0 0 0"/><mass value="4"/>
+      <inertia ixx="0.01312" ixy="0" ixz="0" iyy="0.01478" iyz="0" izz="0.01310"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_5.stl"/></geometry><material name="link_5_mat"><color rgba="0.96 0.74 0.05 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_5.stl"/></geometry></collision>
+  </link>
+  <link name="link_6">
+    <inertial><origin xyz="-0.0327 -0.0000 -0.0000" rpy="0 0 0"/><mass value="1"/>
+      <inertia ixx="0.00243" ixy="0" ixz="0" iyy="0.00149" iyz="0" izz="0.00166"/></inertial>
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_6.stl"/></geometry><material name="link_6_mat"><color rgba="0.55 0.55 0.58 1"/></material></visual>
+    <collision><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://industrial_6axis_description/meshes/link_6.stl"/></geometry></collision>
+  </link>
+  <joint name="joint_1" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_link"/><child link="link_1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.9671" upper="2.9671" effort="1500" velocity="2.9"/>
+  </joint>
+  <joint name="joint_2" type="revolute">
+    <origin xyz="0.16342 0 0.46224" rpy="0 0 0"/>
+    <parent link="link_1"/><child link="link_2"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.5708" upper="2.6180" effort="1500" velocity="2.9"/>
+  </joint>
+  <joint name="joint_3" type="revolute">
+    <origin xyz="0 0 0.84044" rpy="0 0 0"/>
+    <parent link="link_2"/><child link="link_3"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="-2.7925" upper="3.1416" effort="800" velocity="3.1"/>
+  </joint>
+  <joint name="joint_4" type="revolute">
+    <origin xyz="0.89647 0 0.16342" rpy="0 0 0"/>
+    <parent link="link_3"/><child link="link_4"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-3.4907" upper="3.4907" effort="300" velocity="6.2"/>
+  </joint>
+  <joint name="joint_5" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="link_4"/><child link="link_5"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="-2.4435" upper="2.4435" effort="300" velocity="6.2"/>
+  </joint>
+  <joint name="joint_6" type="revolute">
+    <origin xyz="0.12607 0 0" rpy="0 0 0"/>
+    <parent link="link_5"/><child link="link_6"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-6.2832" upper="6.2832" effort="150" velocity="9.5"/>
+  </joint>
+  <!-- tool0: flange face (x = tool approach direction) -->
+  <link name="tool0"/>
+  <joint name="link_6-tool0" type="fixed"><origin xyz="0 0 0" rpy="0 0 0"/><parent link="link_6"/><child link="tool0"/></joint>
+</robot>
