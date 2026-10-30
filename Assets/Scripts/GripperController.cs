@@ -11,32 +11,31 @@ public class GripperController : MonoBehaviour
     public FingerContact leftContact;
 
     [Header("열림/닫힘 값 (m)")]
-    [Tooltip("오른쪽 손가락 열림 위치 (유니티 조인트 한계에 맞춰 설정)")]
     public float rightOpen = 0.0f;
-    [Tooltip("오른쪽 손가락 닫힘 위치")]
     public float rightClose = 0.02f;
-    [Tooltip("왼쪽 손가락 열림 위치")]
     public float leftOpen = 0.0f;
-    [Tooltip("왼쪽 손가락 닫힘 위치")]
     public float leftClose = -0.02f;
 
     [Header("동작 시간 설정")]
     public float moveTime = 0.5f;
-    [Tooltip("목표가 닫힘에 도달한 뒤에도 손가락이 늦게 닿는 것을 대비해 기다리는 최대 시간(초)")]
     public float extraCloseTime = 0.5f;
+
+    [Header("그리퍼 모터 힘 설정 (중요)")]
+    [Tooltip("모터가 낼 수 있는 최대 힘 (부품을 꽉 쥐지 못하고 밀리면 이 값을 키우세요)")]
+    public float forceLimit = 5000f;
+    [Tooltip("목표 위치를 유지하려는 강성 (Stiffness)")]
+    public float stiffness = 100000f;
+    [Tooltip("떨림을 방지하는 감쇠 (Damping)")]
+    public float damping = 10000f;
 
     [Header("부품을 붙일 위치 (손가락 사이 정중앙 Attchpoint)")]
     public Transform attachPoint;
 
     [Header("파지 판정 (마찰 원뿔)")]
     public bool useGraspCheck = true;
-    [Tooltip("손가락과 부품 사이 마찰계수. 허용 각도 = arctan(μ). 0.36 → 약 20°")]
     public float frictionCoefficient = 0.36f;
-    [Tooltip("손가락 패드 절반 높이 (m) - 광선 격자의 위아래 범위")]
     public float padHalfHeight = 0.006f;
-    [Tooltip("손가락 패드 절반 폭 (m) - 광선 격자의 좌우 범위")]
     public float padHalfWidth = 0.006f;
-    [Tooltip("판정 실패 시 손가락을 살짝 벌려 '미끄러진' 상태로 만드는 거리 (m)")]
     public float slipBackoff = 0.001f;
 
     [Header("놓은 뒤 충돌을 다시 켜기까지 대기(초)")]
@@ -62,11 +61,9 @@ public class GripperController : MonoBehaviour
 
     void Start()
     {
-        // 로봇 전체 콜라이더 캐싱 (파지 시 충돌 무시 처리용)
         robotColliders = transform.root.GetComponentsInChildren<Collider>(true);
         SetTargets(rightOpen, leftOpen);
     }
-
     public IEnumerator Close()
     {
         if (IsBusy) yield break;
@@ -283,7 +280,12 @@ public class GripperController : MonoBehaviour
         if (rightFinger != null)
         {
             var d = rightFinger.xDrive;
+            // 유니티 ArticulationBody에서 위치 제어를 하려면 드라이브 타입이 Force 상태에서 
+            // Stiffness와 Damping이 들어가야 하지만, 일부 버전에서는 드라이브 설정 방식이 다릅니다.
             d.target = right;
+            d.forceLimit = forceLimit;
+            d.stiffness = stiffness;
+            d.damping = damping;
             rightFinger.xDrive = d;
         }
 
@@ -291,6 +293,9 @@ public class GripperController : MonoBehaviour
         {
             var d = leftFinger.xDrive;
             d.target = left;
+            d.forceLimit = forceLimit;
+            d.stiffness = stiffness;
+            d.damping = damping;
             leftFinger.xDrive = d;
         }
     }

@@ -785,13 +785,29 @@ PrefabInstance:
       propertyPath: m_XDrive.forceLimit
       value: 1000
       objectReference: {fileID: 0}
+    - target: {fileID: 170996526573718557, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
+      propertyPath: m_XDrive.lowerLimit
+      value: -0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 170996526573718557, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
+      propertyPath: m_XDrive.upperLimit
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 1500381412140383312, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: m_Name
       value: industrial_6axis_gripper
       objectReference: {fileID: 0}
     - target: {fileID: 1630318475478093437, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
+      propertyPath: leftOpen
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1630318475478093437, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1630318475478093437, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
+      propertyPath: rightOpen
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1862365988128212968, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: m_Enabled
@@ -852,6 +868,14 @@ PrefabInstance:
     - target: {fileID: 7482891358873394615, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: m_XDrive.forceLimit
       value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 7482891358873394615, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
+      propertyPath: m_XDrive.lowerLimit
+      value: -0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 7482891358873394615, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
+      propertyPath: m_XDrive.upperLimit
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -945,7 +969,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3368861704552559839, guid: 07aa4434ee289044b8c353085c1a24c0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.227
+      value: 1.015
       objectReference: {fileID: 0}
     - target: {fileID: 3368861704552559839, guid: 07aa4434ee289044b8c353085c1a24c0, type: 3}
       propertyPath: m_LocalPosition.y
@@ -953,7 +977,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3368861704552559839, guid: 07aa4434ee289044b8c353085c1a24c0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.193
+      value: 1.392
       objectReference: {fileID: 0}
     - target: {fileID: 3368861704552559839, guid: 07aa4434ee289044b8c353085c1a24c0, type: 3}
       propertyPath: m_LocalRotation.w

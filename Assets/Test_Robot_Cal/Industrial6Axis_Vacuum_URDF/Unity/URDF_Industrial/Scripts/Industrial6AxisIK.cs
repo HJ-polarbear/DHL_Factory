@@ -21,6 +21,8 @@ public class Industrial6AxisIK : MonoBehaviour
     [Header("Drive (ArticulationBody)")]
     public float stiffness = 100000f;
     public float damping = 10000f;
+    [Tooltip("관절이 낼 수 있는 최대 힘. 무한대(float.MaxValue)면 막혔을 때 물리 계산이 폭주해 크래시가 날 수 있음")]
+    public float forceLimit = 100000f;
     public bool disableGravity = true;
 
     [Header("상태 (읽기 전용)")]
@@ -68,7 +70,7 @@ public class Industrial6AxisIK : MonoBehaviour
         {
             if (joints[i] == null) { Debug.LogError("[IK] link_" + (i + 1) + " 없음 - industrial_6axis_unity.urdf로 임포트했는지 확인"); enabled = false; return; }
             var d = joints[i].xDrive;
-            d.stiffness = stiffness; d.damping = damping; d.forceLimit = float.MaxValue;
+            d.stiffness = stiffness; d.damping = damping; d.forceLimit = forceLimit;   // [변경] float.MaxValue → 유한한 값
             joints[i].xDrive = d;
             q[i] = d.target * Mathf.Deg2Rad;
         }
@@ -106,7 +108,7 @@ public class Industrial6AxisIK : MonoBehaviour
         for (int i = 0; i < 6; i++)
         {
             var d = joints[i].xDrive;
-            d.stiffness = stiffness; d.damping = damping; d.forceLimit = float.MaxValue; // Importer Controller가 덮어써도 복구
+            d.stiffness = stiffness; d.damping = damping; d.forceLimit = forceLimit;   // [변경] float.MaxValue → 유한한 값 // Importer Controller가 덮어써도 복구
             d.target = (float)(q[i] * Mathf.Rad2Deg);
             joints[i].xDrive = d;
             jointDeg[i] = d.target;
@@ -211,3 +213,4 @@ public class Industrial6AxisIK : MonoBehaviour
     }
 
 }
+
