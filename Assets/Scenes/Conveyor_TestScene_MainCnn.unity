@@ -445,7 +445,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 259617958}
-  - component: {fileID: 259617959}
   m_Layer: 0
   m_Name: InspectPoint
   m_TagString: Untagged
@@ -461,26 +460,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 259617957}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.93, y: 2.16, z: -8.25}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -6.07, y: 1.98, z: -8.19}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &259617959
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 259617957}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0885ad389cd4b8419a24efb603a71b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ParcelInfo
-  category: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &279248120
 GameObject:
   m_ObjectHideFlags: 0
@@ -3291,7 +3277,7 @@ MonoBehaviour:
   m_Height: 84
   m_Grayscale: 0
   m_ObservationType: 0
-  m_RuntimeCameraEnable: 0
+  m_RuntimeCameraEnable: 1
   m_ObservationStacks: 1
   m_Compression: 1
 --- !u!4 &2037271665 stripped

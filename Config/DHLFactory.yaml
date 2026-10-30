@@ -19,5 +19,5 @@ behaviors:
         gamma: 0.0               # 단발성 분류이므로 미래 할인율 0 (현재 프레임에만 집중)
         strength: 1.0
     keep_checkpoints: 5
-    max_steps: 50000
+    max_steps: 27000
     summary_freq: 1000
