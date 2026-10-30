@@ -16,16 +16,22 @@ public class ParcelInspectAgent : Agent
     [Header("검사 위치")]
     public Transform inspectionPoint;
 
-    [Header("수동 테스트 모드 (AI 학습 시 반드시 체크 해제!)")]
+    [Header("수동 테스트 모드")]
     public bool manualTestMode = false;
 
-    [Header("생성 위치 변화 - 검사 위치의 로컬 X/Z 기준")]
-    [Min(0f)]
-    public float positionJitter = 0.01f;
+    [Header("생성 위치 변화 (검사 위치 로컬 기준)")]
+    [Tooltip("컨베이어 좌우 방향 흔들림 (기본: ±3cm)")]
+    [Range(0f, 0.1f)]
+    public float lateralJitter = 0.03f;
+
+    [Tooltip("컨베이어 진행 방향 흔들림 (기본: ±1cm)")]
+    [Range(0f, 0.1f)]
+    public float forwardJitter = 0.01f;
 
     [Header("생성 회전 변화 - Y축")]
+    [Tooltip("박스 회전 각도 흔들림 (기본: ±15°)")]
     [Range(0f, 180f)]
-    public float yawJitter = 10f;
+    public float yawJitter = 15f;
 
     [Header("보상")]
     public float correctReward = 1f;
@@ -75,26 +81,40 @@ public class ParcelInspectAgent : Agent
 
     public override void OnEpisodeBegin()
     {
+        StopAllCoroutines();
+        ClearParcel();
+
         if (!ready) return;
-        SpawnNewParcel();
+
+        // 상자 생성 후 카메라 캡처 대기 코루틴 시작
+        StartCoroutine(PrepareAndRequestDecision());
     }
 
-    // 새로운 상자로 교체 생성
-    private void SpawnNewParcel()
+    private IEnumerator PrepareAndRequestDecision()
     {
-        if (currentParcel != null)
-        {
-            Destroy(currentParcel.gameObject);
-            currentParcel = null;
-        }
+        // 1. 새 상자 생성
+        SpawnParcel();
 
+        // 2. 상자가 카메라 화면에 완전히 렌더링될 때까지 1프레임 대기
+        yield return null;
+        yield return new WaitForEndOfFrame();
+
+        // 3. 카메라가 상자를 확실히 본 상태에서 AI에게 판단 요청
+        if (!manualTestMode)
+        {
+            RequestDecision();
+        }
+    }
+
+    private void SpawnParcel()
+    {
         int selectedIndex = Random.Range(0, 3);
         ParcelInfo selectedPrefab = GetPrefab(selectedIndex);
 
         Vector3 localOffset = new Vector3(
-            Random.Range(-positionJitter, positionJitter),
+            Random.Range(-lateralJitter, lateralJitter),
             0f,
-            Random.Range(-positionJitter, positionJitter)
+            Random.Range(-forwardJitter, forwardJitter)
         );
 
         Vector3 spawnPosition =
@@ -139,11 +159,15 @@ public class ParcelInspectAgent : Agent
         LastPrediction = (ParcelCategory)predictedIndex;
         LastCorrect = correct;
 
-        // 보상 부여
         SetReward(correct ? correctReward : wrongReward);
         RecordResult(actualIndex, predictedIndex, correct);
 
         Academy.Instance.StatsRecorder.Add("Parcel/Accuracy", correct ? 1f : 0f);
+
+        if (logEachDecision)
+        {
+            Debug.Log($"[Parcel] 정답: {actualCategory} / 예측: {LastPrediction} / {(correct ? "⭕ 정답!" : "❌ 오답!")}", this);
+        }
 
         if (totalCount % Mathf.Max(1, logEvery) == 0)
         {
@@ -151,26 +175,18 @@ public class ParcelInspectAgent : Agent
             Debug.Log($"[Parcel] 누적 {totalCount}회 / 정답 {correctCount}회 / 정확도 {accuracy:F1}%", this);
         }
 
-        // 다음 상자 준비
-        StartCoroutine(PrepareNextParcel());
+        // 판정 즉시 에피소드 종료
+        EndEpisode();
     }
 
-    private IEnumerator PrepareNextParcel()
+    private void ClearParcel()
     {
         if (currentParcel != null)
         {
+            currentParcel.gameObject.SetActive(false);
             Destroy(currentParcel.gameObject);
             currentParcel = null;
         }
-
-        // 오브젝트 삭제 대기
-        yield return null;
-
-        // 새 상자 생성
-        SpawnNewParcel();
-
-        // 새 상자가 화면에 완전히 렌더링될 때까지 1프레임 대기
-        yield return new WaitForEndOfFrame();
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
