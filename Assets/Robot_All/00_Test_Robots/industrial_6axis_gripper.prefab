@@ -1189,6 +1189,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndustrialGripperController
   left: {fileID: 170996526573718557}
   right: {fileID: 7482891358873394615}
+  gripperBody: {fileID: 0}
   rightContact: {fileID: 6990553451910801312}
   leftContact: {fileID: 1211075035471156631}
   attachPoint: {fileID: 2444563930878104149}
@@ -1215,6 +1216,7 @@ MonoBehaviour:
   snapTargetOnStart: 1
   stiffness: 100000
   damping: 10000
+  forceLimit: 100000
   disableGravity: 1
   reachable: 1
   jointDeg:
@@ -1260,12 +1262,15 @@ MonoBehaviour:
   leftFinger: {fileID: 170996526573718557}
   rightContact: {fileID: 6990553451910801312}
   leftContact: {fileID: 1211075035471156631}
-  rightOpen: -0.02
+  rightOpen: 3
   rightClose: 0.02
-  leftOpen: 0.02
+  leftOpen: 3
   leftClose: -0.02
   moveTime: 0.5
   extraCloseTime: 0.5
+  forceLimit: 5000
+  stiffness: 100000
+  damping: 10000
   attachPoint: {fileID: 2444563930878104149}
   useGraspCheck: 1
   frictionCoefficient: 0.36
@@ -1484,11 +1489,11 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 2
   m_XDrive:
-    lowerLimit: 0
-    upperLimit: 0.1574
-    stiffness: 0
-    damping: 0
-    forceLimit: 200
+    lowerLimit: -0.03
+    upperLimit: 3
+    stiffness: 10000
+    damping: 100
+    forceLimit: 1000
     target: 0
     targetVelocity: 0
     driveType: 0
@@ -4434,11 +4439,11 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 2
   m_XDrive:
-    lowerLimit: 0
-    upperLimit: 0.1574
-    stiffness: 0
-    damping: 0
-    forceLimit: 200
+    lowerLimit: -0.03
+    upperLimit: 3
+    stiffness: 10000
+    damping: 100
+    forceLimit: 1000
     target: 0
     targetVelocity: 0
     driveType: 0

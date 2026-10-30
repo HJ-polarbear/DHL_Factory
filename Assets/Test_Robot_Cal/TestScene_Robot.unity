@@ -769,10 +769,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 113550071814918956, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 170996526573718557, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: m_XDrive.damping
       value: 100
@@ -802,16 +798,8 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1630318475478093437, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1630318475478093437, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: rightOpen
       value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 1862365988128212968, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
-      propertyPath: m_Enabled
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2829203318262870311, guid: 097fcf28a0117e1459a8a54b8b345163, type: 3}
       propertyPath: m_LocalPosition.x
@@ -933,10 +921,6 @@ PrefabInstance:
     - target: {fileID: 3460690360631691280, guid: b37b72b1f09f67047a0674f95208716e, type: 3}
       propertyPath: m_Name
       value: industrial_6axis_vacuum
-      objectReference: {fileID: 0}
-    - target: {fileID: 6200940297809125275, guid: b37b72b1f09f67047a0674f95208716e, type: 3}
-      propertyPath: targetCube
-      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6200940297809125275, guid: b37b72b1f09f67047a0674f95208716e, type: 3}
       propertyPath: dropPosition

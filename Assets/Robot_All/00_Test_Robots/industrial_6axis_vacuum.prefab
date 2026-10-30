@@ -1604,6 +1604,7 @@ MonoBehaviour:
   snapTargetOnStart: 1
   stiffness: 100000
   damping: 10000
+  forceLimit: 100000
   disableGravity: 1
   reachable: 1
   jointDeg:
@@ -1674,7 +1675,7 @@ MonoBehaviour:
   vacuum: {fileID: 9194725095847068406}
   parcel: {fileID: 0}
   placePoint: {fileID: 0}
-  runOnStart: 1
+  runOnStart: 0
   speed: 0.5
   approachHeight: 0.25
   pressDepth: 0.005
