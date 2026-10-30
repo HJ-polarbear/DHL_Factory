@@ -1,20 +1,18 @@
-
-
 using UnityEngine;
 
 public class FingerContact : MonoBehaviour
 {
-    [Tooltip("마지막 접촉 후 이 시간(초)까지는 '닿아 있음'으로 인정 (접촉 신호가 스텝마다 끊기는 것 대비)")]
+    [Tooltip("마지막 접촉 후 이 시간(초)까지는 '닿아 있음'으로 인정")]
     public float holdTime = 0.1f;
 
-    Rigidbody touching;
+    [SerializeField] private Rigidbody touching;
     float lastTouchTime = -1f;
 
     public Rigidbody TouchingPart
     {
         get
         {
-            if (touching == null || Time.fixedTime - lastTouchTime > holdTime)
+            if (touching == null || !touching.gameObject.activeInHierarchy || Time.fixedTime - lastTouchTime > holdTime)
                 return null;
             return touching;
         }
@@ -25,9 +23,11 @@ public class FingerContact : MonoBehaviour
 
     void Record(Collision collision)
     {
-        Rigidbody rb = collision.collider.attachedRigidbody;
+        if (collision == null || collision.collider == null) return;
 
-        if (rb != null && rb.CompareTag("Part"))
+        Rigidbody rb = collision.collider.attachedRigidbody;
+        // "Parcel_Gripper" 혹은 "Part" 태그 모두 대응하도록 수정
+        if (rb != null && (rb.CompareTag("Parcel_Gripper") || rb.CompareTag("Part")))
         {
             touching = rb;
             lastTouchTime = Time.fixedTime;

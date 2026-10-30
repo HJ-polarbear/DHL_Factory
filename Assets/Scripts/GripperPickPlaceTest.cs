@@ -1,112 +1,130 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// Áı°ÔÇü(Gripper) ÀÚµ¿ Pick and Place Å×½ºÆ®: 
-/// ¹Ú½º À§·Î Á¢±Ù -> ³»·Á°¡¼­ ±×¸®ÆÛ ´İ±â -> µé¾î¿Ã¸² -> ³õÀ» À§Ä¡·Î ÀÌµ¿ -> ³»·Á³õ°í ±×¸®ÆÛ ¿­±â -> º¹±Í
-/// </summary>
 public class GripperPickPlaceTest : MonoBehaviour
 {
-    [Header("¿¬°á ÄÄÆ÷³ÍÆ®")]
+    [Header("ì—°ê²° ì»´í¬ë„ŒíŠ¸")]
     public Industrial6AxisIK ik;
-    public IndustrialGripperController gripper; // ¾Õ¼­ ¸¸µç Áı°Ô Á¦¾î ½ºÅ©¸³Æ® ¿¬°á
-    public Rigidbody parcel;               // ÁıÀ» ÅÃ¹è (Rigidbody + BoxCollider)
-    public Transform placePoint;           // ³»·Á³õÀ» À§Ä¡ (ºñ¿ì¸é ¹Ú½º ¿· 0.5m)
+    public IndustrialGripperController gripper; // GripperController íƒ€ì…ìœ¼ë¡œ ì—°ê²°
+    public Rigidbody parcel;
+    public Transform placePoint;
     public bool runOnStart = true;
 
-    [Header("µ¿ÀÛ ¼³Á¤")]
-    public float speed = 0.5f;             // m/s
-    public float approachHeight = 0.25f;   // ¹Ú½º À­¸é À§ Á¢±Ù ³ôÀÌ
-    public float gripHeightOffset = 0.02f; // ¹Ú½º Ãø¸é/»ó´Ü ÆÄÁö ³ôÀÌ Á¶Àı
+    [Header("ë™ì‘ ì„¤ì •")]
+    public float speed = 0.5f;
+    public float approachHeight = 0.25f;
 
-    [Header("±×¸®ÆÛ °³Æó ¼³Á¤ °ª")]
-    public float gripOpenWidth = 0.3f;     // ¿­¾úÀ» ¶§ÀÇ opening °ª
-    public float gripCloseWidth = 0.05f;   // ´İ¾ÒÀ» ¶§(¹°Ã¼¸¦ Àâ¾ÒÀ» ¶§)ÀÇ opening °ª
+    [Header("íŒŒì§€ ê¹Šì´ ì¡°ì ˆ")]
+    public float gripHeightOffset = -0.1f;
+
+    private Vector3 homePosition;
+    private Quaternion homeRotation;
+    private bool homeInitialized = false;
 
     IEnumerator Start()
     {
-        yield return new WaitForSeconds(0.5f);   // ¹°¸® ¾ÈÁ¤È­ ´ë±â
+        yield return new WaitForSeconds(1.0f);
 
-        // ÃÊ±âÈ­: ½ÃÀÛÇÒ ¶§ ±×¸®ÆÛ ¿­¾îµÎ±â
-        if (gripper != null) gripper.opening = gripOpenWidth;
+        if (ik != null && ik.target != null)
+        {
+            homePosition = ik.target.position;
+            homeRotation = ik.target.rotation;
+            homeInitialized = true;
+        }
 
-        if (runOnStart) yield return Run();
+        if (gripper != null) yield return StartCoroutine(gripper.Open());
+
+        if (runOnStart) yield return StartCoroutine(Run());
     }
 
     [ContextMenu("Run Test")]
     public void RunTest() => StartCoroutine(Run());
 
-    IEnumerator Run()
+    public IEnumerator Run()
     {
         if (!ik || !gripper || !parcel || !ik.target)
         {
-            Debug.LogError("[Test] ik / gripper / parcel / ik.target ¿¬°áÀÌ ÇÊ¿äÇÕ´Ï´Ù!");
+            Debug.LogError("[GripperTest] ik / gripper / parcel / ik.target ì¤‘ ì—°ê²°ë˜ì§€ ì•Šì€ í•­ëª©ì´ ìˆìŠµë‹ˆë‹¤!");
             yield break;
+        }
+
+        if (!homeInitialized)
+        {
+            homePosition = ik.target.position;
+            homeRotation = ik.target.rotation;
+            homeInitialized = true;
         }
 
         Transform t = ik.target;
 
-        // Top-Down °íÁ¤ È¸Àü°ª ¼³Á¤
-        Quaternion topDownRot = Quaternion.LookRotation(Vector3.down, Vector3.forward);
-        Vector3 home = t.position;
+        Vector3 approachForward = parcel.transform.forward;
+        approachForward.y = 0;
+        if (approachForward == Vector3.zero) approachForward = Vector3.forward;
 
-        // ÅÃ¹è »óÀÚÀÇ ¹Ù¿îÁî °è»ê
-        Bounds b = parcel.GetComponent<Collider>().bounds;
+        Quaternion alignedTopDownRot = Quaternion.LookRotation(Vector3.down, approachForward);
+
+        Collider parcelCol = parcel.GetComponent<Collider>();
+        if (!parcelCol)
+        {
+            Debug.LogError("[GripperTest] ìƒìì— Colliderê°€ ì—†ìŠµë‹ˆë‹¤!");
+            yield break;
+        }
+
+        Bounds b = parcelCol.bounds;
         Vector3 top = new Vector3(b.center.x, b.max.y, b.center.z);
         Vector3 place = placePoint ? placePoint.position : top + new Vector3(0.5f, 0, 0);
         place.y = (placePoint ? placePoint.position.y : b.min.y) + b.size.y;
 
-        Debug.Log("[Test] 1. ¹Ú½º »ó´Ü Á¢±Ù ½ÃÀÛ (±×¸®ÆÛ ¿ÀÇÂ »óÅÂ)");
-        gripper.opening = gripOpenWidth;
-        yield return Move(t, top + Vector3.up * approachHeight, topDownRot);
+        Debug.Log("[GripperTest] 1. ìƒë‹¨ ì ‘ê·¼ ì‹œì‘");
+        yield return StartCoroutine(gripper.Open());
+        yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot));
 
-        Debug.Log("[Test] 2. ÇÏ°­ ½ÃÀÛ (ÆÄÁö À§Ä¡)");
-        yield return Move(t, top + Vector3.up * gripHeightOffset, topDownRot, 0.3f);
+        Debug.Log("[GripperTest] 2. íŒŒì§€ ìœ„ì¹˜ë¡œ í•˜ê°•");
+        yield return StartCoroutine(Move(t, new Vector3(top.x, top.y + gripHeightOffset, top.z), alignedTopDownRot, 0.3f));
 
-        Debug.Log("[Test] 3. ±×¸®ÆÛ ´İ±â (¹°Ã¼ ÆÄÁö)");
-        gripper.opening = gripCloseWidth;
-        yield return new WaitForSeconds(0.8f); // ¹°Ã¼¸¦ ´Ü´ÜÈ÷ ÀâÀ» ¶§±îÁö ¹°¸® ´ë±â ½Ã°£ ºÎ¿©
+        Debug.Log("[GripperTest] 3. ê·¸ë¦¬í¼ ë‹«ê¸° (Close ì½”ë£¨í‹´ ì‹¤í–‰)");
+        yield return StartCoroutine(gripper.Close()); // ì§ì ‘ ëŒ€ì… ëŒ€ì‹  Close() ì½”ë£¨í‹´ í˜¸ì¶œ
 
-        Debug.Log("[Test] 4. »ó´ÜÀ¸·Î µé¾î¿Ã¸² -> ÀÌ¼Û À§Ä¡·Î ÀÌµ¿");
-        yield return Move(t, top + Vector3.up * approachHeight, topDownRot, 0.5f);
-        yield return Move(t, place + Vector3.up * approachHeight, topDownRot);
+        Debug.Log("[GripperTest] 4. ìƒë‹¨ìœ¼ë¡œ ì´ë™ í›„ ì´ì†¡");
+        yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot, 0.5f));
+        yield return StartCoroutine(Move(t, place + Vector3.up * approachHeight, alignedTopDownRot));
 
-        Debug.Log("[Test] 5. ³»·Á³õÀ» À§Ä¡·Î ÇÏ°­");
-        yield return Move(t, place + Vector3.up * gripHeightOffset, topDownRot, 0.3f);
+        Debug.Log("[GripperTest] 5. ë†“ì„ ìœ„ì¹˜ë¡œ í•˜ê°•");
+        yield return StartCoroutine(Move(t, new Vector3(place.x, place.y + gripHeightOffset, place.z), alignedTopDownRot, 0.3f));
 
-        Debug.Log("[Test] 6. ±×¸®ÆÛ ¿­±â (¹°Ã¼ ³õ±â)");
-        gripper.opening = gripOpenWidth;
-        yield return new WaitForSeconds(0.5f); // ¹°Ã¼°¡ ³õÀÌ´Â ¾ÈÁ¤È­ ´ë±â ½Ã°£
+        Debug.Log("[GripperTest] 6. ê·¸ë¦¬í¼ ì—´ê¸° (Open ì½”ë£¨í‹´ ì‹¤í–‰)");
+        yield return StartCoroutine(gripper.Open()); // ì§ì ‘ ëŒ€ì… ëŒ€ì‹  Open() ì½”ë£¨í‹´ í˜¸ì¶œ
 
-        Debug.Log("[Test] 7. È¨(Home) º¹±Í. ¹Ú½º ÃÖÁ¾ À§Ä¡: " + parcel.position);
-        yield return Move(t, place + Vector3.up * approachHeight, topDownRot);
-        yield return Move(t, home, topDownRot);
+        Debug.Log("[GripperTest] 7. í™ˆ ë³µê·€");
+        yield return StartCoroutine(Move(t, place + Vector3.up * approachHeight, alignedTopDownRot));
+        yield return StartCoroutine(Move(t, homePosition, homeRotation));
 
-        Debug.Log("[Test] ÀüÃ¼ Áı°Ô °øÁ¤ ¿Ï·á!");
+        Debug.Log("[GripperTest] ê³µì • ì™„ë£Œ");
     }
 
-    /// <summary>
-    /// Å¸°ÙÀÇ À§Ä¡¿Í È¸ÀüÀ» ºÎµå·´°Ô º¸°£ÇÏ¸ç ÀÌµ¿½ÃÅ°´Â ÇÔ¼ö
-    /// </summary>
     IEnumerator Move(Transform t, Vector3 to, Quaternion rot, float speedScale = 1f)
     {
+        if (t == null) yield break;
+
         Vector3 from = t.position;
         Quaternion r0 = t.rotation;
-        float dur = Mathf.Max(0.3f, Vector3.Distance(from, to) / (speed * speedScale));
+        float dist = Vector3.Distance(from, to);
+        float dur = Mathf.Max(0.3f, dist / (speed * speedScale));
 
         for (float s = 0; s < 1f; s += Time.fixedDeltaTime / dur)
         {
+            if (t == null) yield break;
             float k = Mathf.SmoothStep(0, 1, s);
             t.position = Vector3.Lerp(from, to, k);
             t.rotation = Quaternion.Slerp(r0, rot, k);
             yield return new WaitForFixedUpdate();
         }
 
-        t.position = to;
-        t.rotation = rot;
-        yield return new WaitForSeconds(0.2f);   // ·Îº¿ÀÌ µû¶ó¿Ã ¾ÈÁ¤È­ ½Ã°£
-
-        if (!ik.reachable)
-            Debug.LogWarning("[Test] °æ°í: µµ´Ş ºÒ°¡(Unreachable) À§Ä¡ÀÔ´Ï´Ù -> " + to);
+        if (t != null)
+        {
+            t.position = to;
+            t.rotation = rot;
+        }
+        yield return new WaitForSeconds(0.2f);
     }
 }

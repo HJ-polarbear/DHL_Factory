@@ -10,16 +10,22 @@ public class GripperController : MonoBehaviour
     public FingerContact rightContact;
     public FingerContact leftContact;
 
-    [Header("열림/닫힘 값 (m) - URDF Limit 맞춤")]
-    public float rightOpen = -0.02f;     // 열린 상태 (바깥쪽)
-    public float rightClose = 0.02f;     // 닫힌 상태 (안쪽)
-    public float leftOpen = 0.02f;       // 열린 상태 (반대쪽)
-    public float leftClose = -0.02f;     // 닫힌 상태 (반대쪽)
+    [Header("열림/닫힘 값 (m)")]
+    [Tooltip("오른쪽 손가락 열림 위치 (유니티 조인트 한계에 맞춰 설정)")]
+    public float rightOpen = 0.0f;
+    [Tooltip("오른쪽 손가락 닫힘 위치")]
+    public float rightClose = 0.02f;
+    [Tooltip("왼쪽 손가락 열림 위치")]
+    public float leftOpen = 0.0f;
+    [Tooltip("왼쪽 손가락 닫힘 위치")]
+    public float leftClose = -0.02f;
+
+    [Header("동작 시간 설정")]
     public float moveTime = 0.5f;
     [Tooltip("목표가 닫힘에 도달한 뒤에도 손가락이 늦게 닿는 것을 대비해 기다리는 최대 시간(초)")]
     public float extraCloseTime = 0.5f;
 
-    [Header("부품을 붙일 위치 (손가락 사이 정중앙)")]
+    [Header("부품을 붙일 위치 (손가락 사이 정중앙 Attchpoint)")]
     public Transform attachPoint;
 
     [Header("파지 판정 (마찰 원뿔)")]
@@ -36,7 +42,7 @@ public class GripperController : MonoBehaviour
     [Header("놓은 뒤 충돌을 다시 켜기까지 대기(초)")]
     public float restoreCollisionDelay = 0.3f;
 
-    [Header("테스트")]
+    [Header("테스트 UI")]
     public bool showTestButtons = true;
 
     public Rigidbody HeldPart { get; private set; }
@@ -56,6 +62,7 @@ public class GripperController : MonoBehaviour
 
     void Start()
     {
+        // 로봇 전체 콜라이더 캐싱 (파지 시 충돌 무시 처리용)
         robotColliders = transform.root.GetComponentsInChildren<Collider>(true);
         SetTargets(rightOpen, leftOpen);
     }
@@ -67,7 +74,6 @@ public class GripperController : MonoBehaviour
         LastGraspOk = false;
 
         bool predictedOk = PredictGrasp(out Rigidbody predictedPart);
-
         string pred = LastGraspInfo;
 
         Vector3 partPos0 = predictedPart != null ? predictedPart.position : Vector3.zero;
@@ -80,7 +86,6 @@ public class GripperController : MonoBehaviour
         float startL = leftFinger.jointPosition[0];
         float t = 0f;
         bool touched = false;
-
         float extra = 0f;
 
         while (t < 1f || extra < extraCloseTime)
@@ -142,11 +147,7 @@ public class GripperController : MonoBehaviour
             turnedDeg = Quaternion.Angle(predictedPart.rotation, partRot0);
         }
 
-        float rightPos = rightFinger.jointPosition[0];
-        float leftPos = leftFinger.jointPosition[0];
-
-        Debug.Log($"[Grasp] {result} | 판정: {pred} | R: {rightTime}, L: {leftTime} | 위치: {rightPos:F4} / {leftPos:F4}");
-
+        Debug.Log($"[Grasp] {result} | 판정: {pred} | 처음 닿은 시간 R: {rightTime}, L: {leftTime} | 부품 이동 {movedMm:F1}mm, 회전 {turnedDeg:F1}도");
         IsBusy = false;
     }
 
@@ -178,7 +179,9 @@ public class GripperController : MonoBehaviour
         part = null;
         dbgValid = false;
 
-        Vector3 axis = (rightFinger.transform.rotation * (rightFinger.anchorRotation * Vector3.forward)).normalized;
+        if (attachPoint == null) return false;
+
+        Vector3 axis = (rightFinger.transform.rotation * (rightFinger.anchorRotation * Vector3.right)).normalized;
         Vector3 up = Vector3.ProjectOnPlane(Vector3.up, axis).normalized;
         Vector3 side = Vector3.Cross(axis, up).normalized;
         Vector3 center = attachPoint.position;
@@ -217,6 +220,7 @@ public class GripperController : MonoBehaviour
         Vector3 dir = -sideSign * axis;
 
         for (int iu = -1; iu <= 1; iu++)
+        {
             for (int iv = -1; iv <= 1; iv++)
             {
                 Vector3 origin = center + up * (iu * padHalfHeight) + side * (iv * padHalfWidth)
@@ -235,6 +239,7 @@ public class GripperController : MonoBehaviour
                     }
                 }
             }
+        }
         return bestPart != null;
     }
 
@@ -265,21 +270,29 @@ public class GripperController : MonoBehaviour
         {
             if (partCollider == null) continue;
             foreach (var robotCollider in robotColliders)
+            {
                 if (robotCollider != null && robotCollider != partCollider)
                     Physics.IgnoreCollision(partCollider, robotCollider, ignore);
+            }
         }
         if (!ignore) ignoredPartColliders.Clear();
     }
 
     void SetTargets(float right, float left)
     {
-        var rd = rightFinger.zDrive;
-        rd.target = right;
-        rightFinger.zDrive = rd;
+        if (rightFinger != null)
+        {
+            var d = rightFinger.xDrive;
+            d.target = right;
+            rightFinger.xDrive = d;
+        }
 
-        var ld = leftFinger.zDrive;
-        ld.target = left;
-        leftFinger.zDrive = ld;
+        if (leftFinger != null)
+        {
+            var d = leftFinger.xDrive;
+            d.target = left;
+            leftFinger.xDrive = d;
+        }
     }
 
     void OnDrawGizmos()
@@ -294,19 +307,20 @@ public class GripperController : MonoBehaviour
         Gizmos.DrawSphere(dbgHitB, 0.0015f);
     }
 
-    static string Name(Rigidbody rb) => rb != null ? rb.name : "-";
-
     void OnGUI()
     {
         if (!showTestButtons) return;
 
-        GUILayout.BeginArea(new Rect(10, 10, 300, 210), GUI.skin.box);
-        if (GUILayout.Button("Open")) StartCoroutine(Open());
-        if (GUILayout.Button("Close")) StartCoroutine(Close());
-        GUILayout.Label($"Right / Left 위치: {rightFinger.jointPosition[0]:F4} / {leftFinger.jointPosition[0]:F4}");
-        GUILayout.Label($"닿음: {Name(rightContact.TouchingPart)} / {Name(leftContact.TouchingPart)}");
-        GUILayout.Label($"잡은 부품: {Name(HeldPart)}");
-        GUILayout.Label($"판정: {LastGraspInfo}");
+        GUILayout.BeginArea(new Rect(10, 10, 300, 220), GUI.skin.box);
+        if (GUILayout.Button("Open Gripper")) StartCoroutine(Open());
+        if (GUILayout.Button("Close Gripper")) StartCoroutine(Close());
+
+        float rPos = rightFinger != null ? rightFinger.jointPosition[0] : 0f;
+        float lPos = leftFinger != null ? leftFinger.jointPosition[0] : 0f;
+        GUILayout.Label($"R / L 위치: {rPos:F4} / {lPos:F4}");
+        GUILayout.Label($"접촉 상태 R: {(rightContact != null && rightContact.TouchingPart != null ? rightContact.TouchingPart.name : "-")}");
+        GUILayout.Label($"접촉 상태 L: {(leftContact != null && leftContact.TouchingPart != null ? leftContact.TouchingPart.name : "-")}");
+        GUILayout.Label($"잡은 부품: {(HeldPart != null ? HeldPart.name : "-")}");
         GUILayout.EndArea();
     }
 }

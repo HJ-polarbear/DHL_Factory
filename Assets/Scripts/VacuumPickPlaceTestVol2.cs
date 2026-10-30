@@ -1,96 +1,114 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// ÈíÂø ÀÚµ¿ Å×½ºÆ® (Top-Down ÀÎÇü»Ì±â ¹æ½Ä °íÁ¤): 
-/// ¹Ú½º À§·Î Á¢±Ù -> ³»·Á°¡¼­ ÈíÂø -> µé¾î¿Ã¸² -> ³õÀ» À§Ä¡·Î ÀÌµ¿ -> ³»·Á³õ°í ÇØÁ¦ -> º¹±Í
+/// í¡ì°© ìë™ í…ŒìŠ¤íŠ¸ (ìƒì íšŒì „ ê°ë„ ì—°ë™ Top-Down ë°©ì‹): 
+/// ë°•ìŠ¤ ìœ„ë¡œ ì ‘ê·¼(íšŒì „ ì¼ì¹˜) -> ë‚´ë ¤ê°€ì„œ í¡ì°© -> ë“¤ì–´ì˜¬ë¦¼ -> ë†“ì„ ìœ„ì¹˜ë¡œ ì´ë™ -> ë‚´ë ¤ë†“ê³  í•´ì œ -> ë³µê·€
 /// </summary>
 public class VacuumPickPlaceTestVol2 : MonoBehaviour
 {
-    [Header("¿¬°á ÄÄÆ÷³ÍÆ®")]
+    [Header("ì—°ê²° ì»´í¬ë„ŒíŠ¸")]
     public Industrial6AxisIK ik;
     public VacuumGripper vacuum;
-    public Rigidbody parcel;               // ÁıÀ» ÅÃ¹è (Rigidbody + BoxCollider)
-    public Transform placePoint;           // ³»·Á³õÀ» À§Ä¡ (ºñ¿ì¸é ¹Ú½º ¿· 0.5m)
+    public Rigidbody parcel;               // ì§‘ì„ íƒë°° (Rigidbody + BoxCollider)
+    public Transform placePoint;           // ë‚´ë ¤ë†“ì„ ìœ„ì¹˜ (ë¹„ìš°ë©´ ë°•ìŠ¤ ì˜† 0.5m)
     public bool runOnStart = true;
 
-    [Header("µ¿ÀÛ ¼³Á¤")]
+    [Header("ë™ì‘ ì„¤ì •")]
     public float speed = 0.5f;             // m/s
-    public float approachHeight = 0.25f;   // ¹Ú½º À­¸é À§ Á¢±Ù ³ôÀÌ
-    public float pressDepth = 0.005f;      // À­¸éº¸´Ù »ìÂ¦ ´õ ´­·¯ Á¢ÃË È®º¸
+    public float approachHeight = 0.25f;   // ë°•ìŠ¤ ìœ—ë©´ ìœ„ ì ‘ê·¼ ë†’ì´
+    public float pressDepth = 0.005f;      // ìœ—ë©´ë³´ë‹¤ ì‚´ì§ ë” ëˆŒëŸ¬ ì ‘ì´‰ í™•ë³´
+
+    private Vector3 homePosition;
+    private Quaternion homeRotation;
+    private bool homeInitialized = false;
 
     IEnumerator Start()
     {
-        yield return new WaitForSeconds(0.5f);   // ¹°¸® ¾ÈÁ¤È­ ´ë±â
-        if (runOnStart) yield return Run();
+        yield return new WaitForSeconds(1.0f);   // ë¬¼ë¦¬ ì•ˆì •í™” ë° ì´ˆê¸° í™ˆ ìì„¸ ìº¡ì²˜ ëŒ€ê¸°
+
+        if (ik != null && ik.target != null)
+        {
+            homePosition = ik.target.position;
+            homeRotation = ik.target.rotation;
+            homeInitialized = true;
+        }
+
+        if (runOnStart) yield return StartCoroutine(Run());
     }
 
     [ContextMenu("Run Test")]
     public void RunTest() => StartCoroutine(Run());
 
-    IEnumerator Run()
+    public IEnumerator Run()
     {
         if (!ik || !vacuum || !parcel || !ik.target)
         {
-            Debug.LogError("[Test] ik / vacuum / parcel / ik.target ¿¬°áÀÌ ÇÊ¿äÇÕ´Ï´Ù!");
+            Debug.LogError("[VacuumTest] ik / vacuum / parcel / ik.target ì—°ê²°ì´ í•„ìš”í•©ë‹ˆë‹¤!");
             yield break;
+        }
+
+        if (!homeInitialized)
+        {
+            homePosition = ik.target.position;
+            homeRotation = ik.target.rotation;
+            homeInitialized = true;
         }
 
         Transform t = ik.target;
 
-        // [º¸¿Ï Æ÷ÀÎÆ®] À§¿¡¼­ ¾Æ·¡¸¦ ³»·Á´Ùº¸´Â(Top-Down) °íÁ¤ È¸Àü°ª ¼³Á¤
-        // ÆÄ¶õ»ö È­»ìÇ¥(+Z, Á¢±Ù ¹æÇâ)´Â ¾Æ·¡(Vector3.down), ÃÊ·Ï»ö È­»ìÇ¥(+Y, À­¹æÇâ)´Â Àü¹æ(Vector3.forward)À¸·Î °íÁ¤ÇÏ¿© ¼Õ¸ñ µÚÁıÈû ¹æÁö
-        Quaternion topDownRot = Quaternion.LookRotation(Vector3.down, Vector3.forward);
+        // [í•µì‹¬ ë³€ê²½] ìƒìì˜ íšŒì „(Yaw ë“±)ì„ ë°˜ì˜í•œ Top-Down íšŒì „ ê³„ì‚°
+        Vector3 approachForward = parcel.transform.forward;
+        approachForward.y = 0; // ìˆ˜í‰ ì„±ë¶„ë§Œ ì¶”ì¶œí•˜ì—¬ ê¸°ìš¸ì–´ì§ ë°©ì§€
+        if (approachForward == Vector3.zero) approachForward = Vector3.forward;
 
-        Vector3 home = t.position;
+        Quaternion alignedTopDownRot = Quaternion.LookRotation(Vector3.down, approachForward);
 
-        // ÅÃ¹è »óÀÚÀÇ ¹Ù¿îÁî °è»ê
+        // íƒë°° ìƒìì˜ ë°”ìš´ì¦ˆ ê³„ì‚°
         Bounds b = parcel.GetComponent<Collider>().bounds;
         Vector3 top = new Vector3(b.center.x, b.max.y, b.center.z);
         Vector3 place = placePoint ? placePoint.position : top + new Vector3(0.5f, 0, 0);
         place.y = (placePoint ? placePoint.position.y : b.min.y) + b.size.y;
 
-        Debug.Log("[Test] 1. ¹Ú½º »ó´Ü Á¢±Ù ½ÃÀÛ");
-        yield return Move(t, top + Vector3.up * approachHeight, topDownRot);
+        Debug.Log("[VacuumTest] 1. ìƒì íšŒì „ ê°ë„ ë™ê¸°í™” ë° ìƒë‹¨ ì ‘ê·¼ ì‹œì‘");
+        yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
 
-        Debug.Log("[Test] 2. ÇÏ°­ ½ÃÀÛ");
-        yield return Move(t, top - Vector3.up * pressDepth, topDownRot, 0.3f);
+        Debug.Log("[VacuumTest] 2. í•˜ê°• ì‹œì‘");
+        yield return Move(t, top - Vector3.up * pressDepth, alignedTopDownRot, 0.3f);
 
-        Debug.Log("[Test] 3. ÈíÂø(Vacuum) ON");
+        Debug.Log("[VacuumTest] 3. í¡ì°©(Vacuum) ON");
         vacuum.vacuumOn = true;
         yield return new WaitForFixedUpdate();
         yield return new WaitForFixedUpdate();
 
-        Debug.Log("[Test] ÈíÂø °á°ú: " + vacuum.lastResult);
+        Debug.Log("[VacuumTest] í¡ì°© ê²°ê³¼: " + vacuum.lastResult);
         if (!vacuum.holding)
         {
-            Debug.LogWarning("[Test] ÈíÂø ½ÇÆĞ·Î ÀÎÇØ º¹±ÍÇÕ´Ï´Ù.");
+            Debug.LogWarning("[VacuumTest] í¡ì°© ì‹¤íŒ¨ë¡œ ì¸í•´ ë³µê·€í•©ë‹ˆë‹¤.");
             vacuum.vacuumOn = false;
-            yield return Move(t, top + Vector3.up * approachHeight, topDownRot);
+            yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
+            yield return Move(t, homePosition, homeRotation);
             yield break;
         }
 
-        Debug.Log("[Test] 4. »ó´ÜÀ¸·Î µé¾î¿Ã¸² -> ÀÌ¼Û À§Ä¡·Î ÀÌµ¿");
-        yield return Move(t, top + Vector3.up * approachHeight, topDownRot, 0.5f);
-        yield return Move(t, place + Vector3.up * approachHeight, topDownRot);
+        Debug.Log("[VacuumTest] 4. ìƒë‹¨ìœ¼ë¡œ ë“¤ì–´ì˜¬ë¦¼ -> ì´ì†¡ ìœ„ì¹˜ë¡œ ì´ë™");
+        yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot, 0.5f);
+        yield return Move(t, place + Vector3.up * approachHeight, alignedTopDownRot);
 
-        Debug.Log("[Test] 5. ³»·Á³õÀ» À§Ä¡·Î ÇÏ°­");
-        yield return Move(t, place + Vector3.up * 0.01f, topDownRot, 0.3f);
+        Debug.Log("[VacuumTest] 5. ë‚´ë ¤ë†“ì„ ìœ„ì¹˜ë¡œ í•˜ê°•");
+        yield return Move(t, place + Vector3.up * 0.01f, alignedTopDownRot, 0.3f);
 
-        Debug.Log("[Test] 6. ÈíÂø(Vacuum) OFF (³õ±â)");
+        Debug.Log("[VacuumTest] 6. í¡ì°©(Vacuum) OFF (ë†“ê¸°)");
         vacuum.vacuumOn = false;
         yield return new WaitForSeconds(0.3f);
 
-        Debug.Log("[Test] 7. È¨(Home) º¹±Í. ¹Ú½º ÃÖÁ¾ À§Ä¡: " + parcel.position);
-        yield return Move(t, place + Vector3.up * approachHeight, topDownRot);
-        yield return Move(t, home, topDownRot);
+        Debug.Log("[VacuumTest] 7. ì§€ì •ëœ í™ˆ ë³µê·€.");
+        yield return Move(t, place + Vector3.up * approachHeight, alignedTopDownRot);
+        yield return Move(t, homePosition, homeRotation);
 
-        Debug.Log("[Test] ÀüÃ¼ °øÁ¤ ¿Ï·á!");
+        Debug.Log("[VacuumTest] ì „ì²´ í¡ì°© ê³µì • ì™„ë£Œ!");
     }
 
-    /// <summary>
-    /// Å¸°ÙÀÇ À§Ä¡¿Í È¸ÀüÀ» ºÎµå·´°Ô º¸°£ÇÏ¸ç ÀÌµ¿½ÃÅ°´Â ÇÔ¼ö
-    /// </summary>
     IEnumerator Move(Transform t, Vector3 to, Quaternion rot, float speedScale = 1f)
     {
         Vector3 from = t.position;
@@ -107,9 +125,9 @@ public class VacuumPickPlaceTestVol2 : MonoBehaviour
 
         t.position = to;
         t.rotation = rot;
-        yield return new WaitForSeconds(0.2f);   // ·Îº¿ÀÌ µû¶ó¿Ã ¾ÈÁ¤È­ ½Ã°£
+        yield return new WaitForSeconds(0.2f);
 
         if (!ik.reachable)
-            Debug.LogWarning("[Test] °æ°í: µµ´Ş ºÒ°¡(Unreachable) À§Ä¡ÀÔ´Ï´Ù -> " + to);
+            Debug.LogWarning("[VacuumTest] ê²½ê³ : ë„ë‹¬ ë¶ˆê°€(Unreachable) ìœ„ì¹˜ì…ë‹ˆë‹¤ -> " + to);
     }
 }

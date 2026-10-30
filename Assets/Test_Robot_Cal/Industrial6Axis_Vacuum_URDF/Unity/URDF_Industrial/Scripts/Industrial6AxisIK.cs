@@ -84,7 +84,7 @@ public class Industrial6AxisIK : MonoBehaviour
 
             Vector3 targetPos = baseLink.TransformPoint(Ros2Unity(tcp));
             targetPos.y -= 0.5f; // 시작할 때 높이를 살짝(15cm) 위로 띄워 팔 꺾임 방지
-
+            targetPos.z -= 0.7f; // 시작할 때 높이를 살짝(15cm) 위로 띄워 팔 꺾임 방지
             target.position = targetPos;
             //target.rotation = baseLink.rotation * RosRotToUnity(R);
         }

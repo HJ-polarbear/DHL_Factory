@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 3
   tags:
   - robot
+  - Parcel_Vacuum
+  - Parcel_Gripper
+  - Parcel_Ignore
   layers:
   - Default
   - TransparentFX
