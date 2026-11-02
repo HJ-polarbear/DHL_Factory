@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b78392962fa17454f85a1bec5c0deff6
+guid: 16565a4551b18274ead5e693961fd77b
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -53,7 +53,9 @@ TextureImporter:
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 0
+  spriteTessellationMethod: 0
   spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
   textureType: 0
   textureShape: 1
   singleChannelComponent: 0
@@ -128,10 +130,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 303030
-  packageName: realvirtual.io Digital Twin Starter 6
-  packageVersion: 6.0.11-8733
-  assetPath: Assets/realvirtual/Materials/Textures/rv-cecker-1024.png
-  uploadId: 880772
