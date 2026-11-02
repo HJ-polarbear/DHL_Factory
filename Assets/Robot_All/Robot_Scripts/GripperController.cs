@@ -41,13 +41,14 @@ public class GripperController : MonoBehaviour
     [Header("놓은 뒤 충돌을 다시 켜기까지 대기(초)")]
     public float restoreCollisionDelay = 0.3f;
 
+
     [Header("테스트 UI")]
     public bool showTestButtons = true;
 
     public Rigidbody HeldPart { get; private set; }
     public bool IsBusy { get; private set; }
 
-    public bool LastGraspOk { get; private set; }
+    public bool LastGraspOk { get; private set; } = false;
     public float LastAngleRight { get; private set; }
     public float LastAngleLeft { get; private set; }
     public string LastGraspInfo { get; private set; } = "-";
