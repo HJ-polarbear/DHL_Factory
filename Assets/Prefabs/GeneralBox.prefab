@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 5750533139362577016}
   m_Layer: 6
   m_Name: GeneralBox
-  m_TagString: Untagged
+  m_TagString: Parcel_Ignore
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

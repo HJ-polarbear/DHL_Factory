@@ -45,6 +45,7 @@ public class IndustrialGripperController : MonoBehaviour
     public Rigidbody HeldPart { get; private set; }
     public bool IsBusy { get; private set; }
     public bool LastGraspOk { get; private set; }
+    public string LastGraspInfo { get; private set; } = "-";
 
     FixedJoint joint;   // 박스와 그리퍼 본체를 잇는 조인트
 
@@ -125,23 +126,26 @@ public class IndustrialGripperController : MonoBehaviour
             {
                 extra += Time.fixedDeltaTime;
             }
-
-            // 널 체크가 포함된 접촉 센서 확인
-            Rigidbody rR = (rightContact != null) ? rightContact.TouchingPart : null;
-            Rigidbody rL = (leftContact != null) ? leftContact.TouchingPart : null;
-
-            // 양쪽 손가락이 모두 동일한 물체를 잡았을 때
-            if (rR != null && rR == rL)
+            // [추가] 닫기 시작 후 최소 0.1초가 지나기 전에는 센서 감지를 무시하여 초기 겹침 오작동 방지
+            if (t > 0.1f)
             {
-                touched = true;
-                // 현재 벌어져 있는 포지션으로 opening 고정 (더 조이지 않음)
-                opening = Mathf.Abs(left.jointPosition[0]) + Mathf.Abs(right.jointPosition[0]);
-                LastGraspOk = Attach(rR);
-                if (LastGraspOk)
-                    Debug.Log("[IndustrialGripper] 물체 접촉 감지 완료. 파지 위치 고정 및 닫기 중지.");
-                break;
-            }
+                // 널 체크가 포함된 접촉 센서 확인
+                Rigidbody rR = (rightContact != null) ? rightContact.TouchingPart : null;
+                Rigidbody rL = (leftContact != null) ? leftContact.TouchingPart : null;
 
+                // 양쪽 손가락이 모두 동일한 물체를 잡았을 때
+                if (rR != null && rR == rL)
+                {
+                    touched = true;
+                    // 현재 벌어져 있는 포지션으로 opening 고정 (더 조이지 않음)
+                    Debug.Log($"[Debug] 물체 접촉 감지됨! rR: {rR.name}, rL: {rL.name}"); // 이 로그가 즉시 찍히는지 확인
+                    opening = Mathf.Abs(left.jointPosition[0]) + Mathf.Abs(right.jointPosition[0]);
+                    LastGraspOk = Attach(rR);
+                    if (LastGraspOk)
+                        Debug.Log("[IndustrialGripper] 물체 접촉 감지 완료. 파지 위치 고정 및 닫기 중지.");
+                    break;
+                }
+            }
             yield return new WaitForFixedUpdate();
         }
 

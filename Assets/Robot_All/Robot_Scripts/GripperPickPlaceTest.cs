@@ -85,6 +85,17 @@ public class GripperPickPlaceTest : MonoBehaviour
         Debug.Log("[GripperTest] 3. 그리퍼 닫기 (Close 코루틴 실행)");
         yield return StartCoroutine(gripper.Close()); // 직접 대입 대신 Close() 코루틴 호출
 
+        // [추가된 부분] 파지 성공 여부 검사 (LastGraspOk 활용)
+        Debug.Log("[GripperTest] 파지 결과: " + gripper.LastGraspInfo);
+        if (!gripper.LastGraspOk)
+        {
+            Debug.LogWarning("[GripperTest] 파지(잡기) 실패로 인해 안전하게 홈(Home)으로 복귀합니다.");
+            yield return StartCoroutine(gripper.Open()); // 손가락 열기
+            yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot)); // 상단으로 빠져나오기
+            yield return StartCoroutine(Move(t, homePosition, homeRotation)); // 홈 복귀
+            yield break; // 공정 중단
+        }
+
         Debug.Log("[GripperTest] 4. 상단으로 이동 후 이송");
         yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot, 0.5f));
         yield return StartCoroutine(Move(t, place + Vector3.up * approachHeight, alignedTopDownRot));

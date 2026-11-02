@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class ParcelStationController : MonoBehaviour
 {
+    [Header("컨베이어 제어 연결")]
+    public InspectionController inspectionController; // 검사/컨베이어 제어 컴포넌트 연동
+
     [Header("연결 컴포넌트")]
     public VacuumPickPlaceTestVol2 vacuumTest;   // 흡착형 테스트 스크립트 연결
     public GripperPickPlaceTest gripperTest;     // 집게형 테스트 스크립트 연결
@@ -67,7 +70,18 @@ public class ParcelStationController : MonoBehaviour
             }
             else if (hit.CompareTag(tagIgnore))
             {
-                continue; // 무시할 태그는 건너뜀
+                // [추가] 무시 태그일 경우 정지 공정을 진행하지 않고 컨베이어를 즉시 재가동함
+                Rigidbody ignoreRb = hit.GetComponent<Rigidbody>();
+                if (ignoreRb != null)
+                {
+                    Debug.Log($"[StationController] 무시 태그({tagIgnore}) 감지: 공정을 건너뛰고 컨베이어를 재가동합니다.");
+
+                    if (inspectionController != null)
+                    {
+                        inspectionController.ReleaseParcel();
+                    }
+                }
+                continue; // 해당 오브젝트 처리 건너뜀
             }
             else
             {
@@ -149,7 +163,11 @@ public class ParcelStationController : MonoBehaviour
                 Debug.LogError("[StationController] 집게형 테스트 스크립트(GripperTest)가 연결되지 않았습니다!");
             }
         }
-
+        // 로봇 공정 완료 후 컨베이어 재가동 신호 전달
+        if (inspectionController != null)
+        {
+            inspectionController.ReleaseParcel();
+        }
         isRunning = false;
         detectedParcel = null;
         stableTimer = 0f;

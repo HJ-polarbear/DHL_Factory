@@ -689,7 +689,7 @@ GameObject:
   - component: {fileID: 2960237462834608559}
   m_Layer: 6
   m_Name: FragileBox
-  m_TagString: Untagged
+  m_TagString: Parcel_Vacuum
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
