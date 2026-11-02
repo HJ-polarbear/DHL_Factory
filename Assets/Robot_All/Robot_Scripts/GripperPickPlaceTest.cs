@@ -17,6 +17,10 @@ public class GripperPickPlaceTest : MonoBehaviour
     [Header("파지 깊이 조절")]
     public float gripHeightOffset = -0.1f;
 
+    [Header("테스트 실패 시뮬레이션 설정")]
+    [Tooltip("임의로 파지를 실패하게 만들 확률 (0.0 = 항상 성공, 1.0 = 항상 실패)")]
+    [Range(0f, 1f)] public float failureProbability = 0.0f;
+
     private Vector3 homePosition;
     private Quaternion homeRotation;
     private bool homeInitialized = false;
@@ -75,24 +79,79 @@ public class GripperPickPlaceTest : MonoBehaviour
         Vector3 place = placePoint ? placePoint.position : top + new Vector3(0.5f, 0, 0);
         place.y = (placePoint ? placePoint.position.y : b.min.y) + b.size.y;
 
-        Debug.Log("[GripperTest] 1. 상단 접근 시작");
-        yield return StartCoroutine(gripper.Open());
-        yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot));
+        bool graspSuccess = false;
+        int maxRetry = 3;
 
-        Debug.Log("[GripperTest] 2. 파지 위치로 하강");
-        yield return StartCoroutine(Move(t, new Vector3(top.x, top.y + gripHeightOffset, top.z), alignedTopDownRot, 0.3f));
+        //Debug.Log("[GripperTest] 1. 상단 접근 시작");
+        //yield return StartCoroutine(gripper.Open());
+        //yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot));
 
-        Debug.Log("[GripperTest] 3. 그리퍼 닫기 (Close 코루틴 실행)");
-        yield return StartCoroutine(gripper.Close()); // 직접 대입 대신 Close() 코루틴 호출
+        //Debug.Log("[GripperTest] 2. 파지 위치로 하강");
+        //yield return StartCoroutine(Move(t, new Vector3(top.x, top.y + gripHeightOffset, top.z), alignedTopDownRot, 0.3f));
 
-        // [추가된 부분] 파지 성공 여부 검사 (LastGraspOk 활용)
-        Debug.Log("[GripperTest] 파지 결과: " + gripper.LastGraspInfo);
-        if (!gripper.LastGraspOk)
+        //Debug.Log("[GripperTest] 3. 그리퍼 닫기 (Close 코루틴 실행)");
+        //yield return StartCoroutine(gripper.Close()); // 직접 대입 대신 Close() 코루틴 호출
+
+        //// [추가된 부분] 파지 성공 여부 검사 (LastGraspOk 활용)
+        //Debug.Log("[GripperTest] 파지 결과: " + gripper.LastGraspInfo);
+        //if (!gripper.LastGraspOk)
+        //{
+        //    Debug.LogWarning("[GripperTest] 파지(잡기) 실패로 인해 안전하게 홈(Home)으로 복귀합니다.");
+        //    yield return StartCoroutine(gripper.Open()); // 손가락 열기
+        //    yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot)); // 상단으로 빠져나오기
+        //    yield return StartCoroutine(Move(t, homePosition, homeRotation)); // 홈 복귀
+        //    yield break; // 공정 중단
+        //}
+        // [변경] 최대 3회 파지 시도 루프 (실패 시 상단 복귀 후 재시도)
+        for (int attempt = 1; attempt <= maxRetry; attempt++)
         {
-            Debug.LogWarning("[GripperTest] 파지(잡기) 실패로 인해 안전하게 홈(Home)으로 복귀합니다.");
-            yield return StartCoroutine(gripper.Open()); // 손가락 열기
-            yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot)); // 상단으로 빠져나오기
-            yield return StartCoroutine(Move(t, homePosition, homeRotation)); // 홈 복귀
+            Debug.Log($"[GripperTest] 파지 시도 {attempt}/{maxRetry} - 상단 접근 시작");
+            yield return StartCoroutine(gripper.Open());
+            yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot));
+
+            Debug.Log("[GripperTest] 파지 위치로 하강");
+            yield return StartCoroutine(Move(t, new Vector3(top.x, top.y + gripHeightOffset, top.z), alignedTopDownRot, 0.3f));
+
+            Debug.Log("[GripperTest] 그리퍼 닫기 (Close 코루틴 실행)");
+            yield return StartCoroutine(gripper.Close());
+
+            // 기본 물리 판정 결과 확인
+            bool isActuallyGrabbed = gripper.LastGraspOk;
+
+            // [추가] 임의 실패 확률 시뮬레이션 적용
+            if (isActuallyGrabbed && failureProbability > 0f && Random.value < failureProbability)
+            {
+                Debug.LogWarning($"[GripperTest] (시뮬레이션) 설정된 확률({failureProbability * 100}%)에 의해 의도적인 파지 실패가 발생했습니다!");
+                isActuallyGrabbed = false;
+            }
+
+            Debug.Log("[GripperTest] 파지 결과: " + (isActuallyGrabbed ? "성공" : "실패"));
+
+            if (isActuallyGrabbed)
+            {
+                Debug.Log("[GripperTest] 파지 성공!");
+                graspSuccess = true;
+                break; // 성공 시 반복문 탈출 후 정상 이송 공정으로 진행
+            }
+            else
+            {
+                Debug.LogWarning($"[GripperTest] 파지 실패 (시도 {attempt}/{maxRetry}). 그리퍼를 열고 상단으로 복귀 후 재시도합니다.");
+                yield return StartCoroutine(gripper.Open());
+                yield return StartCoroutine(Move(t, top + Vector3.up * approachHeight, alignedTopDownRot));
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
+
+        // [변경] 3번 모두 실패했을 때 처리 (컨베이어 작동 및 홈 복귀)
+        if (!graspSuccess)
+        {
+            Debug.LogWarning("[GripperTest] 3회 시도 모두 파지 실패. 컨베이어를 작동시키고 홈으로 복귀합니다.");
+            yield return StartCoroutine(gripper.Open());
+
+            // TODO: 컨베이어 작동 코드가 있다면 이곳에 추가하세요.
+            // 예: ConveyorController.Instance.StartConveyor();
+
+            yield return StartCoroutine(Move(t, homePosition, homeRotation));
             yield break; // 공정 중단
         }
 

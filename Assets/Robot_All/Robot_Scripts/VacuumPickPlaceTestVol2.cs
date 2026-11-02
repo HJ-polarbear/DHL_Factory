@@ -19,6 +19,10 @@ public class VacuumPickPlaceTestVol2 : MonoBehaviour
     public float approachHeight = 0.25f;   // 박스 윗면 위 접근 높이
     public float pressDepth = 0.005f;      // 윗면보다 살짝 더 눌러 접촉 확보
 
+    [Header("테스트 실패 시뮬레이션 설정")]
+    [Tooltip("임의로 흡착을 실패하게 만들 확률 (0.0 = 항상 성공, 1.0 = 항상 실패)")]
+    [Range(0f, 1f)] public float failureProbability = 0.0f;
+
     private Vector3 homePosition;
     private Quaternion homeRotation;
     private bool homeInitialized = false;
@@ -70,25 +74,129 @@ public class VacuumPickPlaceTestVol2 : MonoBehaviour
         Vector3 place = placePoint ? placePoint.position : top + new Vector3(0.5f, 0, 0);
         place.y = (placePoint ? placePoint.position.y : b.min.y) + b.size.y;
 
-        Debug.Log("[VacuumTest] 1. 상자 회전 각도 동기화 및 상단 접근 시작");
-        yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
+        //Debug.Log("[VacuumTest] 1. 상자 회전 각도 동기화 및 상단 접근 시작");
+        //yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
 
-        Debug.Log("[VacuumTest] 2. 하강 시작");
-        yield return Move(t, top - Vector3.up * pressDepth, alignedTopDownRot, 0.3f);
+        //Debug.Log("[VacuumTest] 2. 하강 시작");
+        //yield return Move(t, top - Vector3.up * pressDepth, alignedTopDownRot, 0.3f);
 
-        Debug.Log("[VacuumTest] 3. 흡착(Vacuum) ON");
-        vacuum.vacuumOn = true;
-        yield return new WaitForFixedUpdate();
-        yield return new WaitForFixedUpdate();
+        //Debug.Log("[VacuumTest] 3. 흡착(Vacuum) ON");
+        //vacuum.vacuumOn = true;
+        //yield return new WaitForFixedUpdate();
+        //yield return new WaitForFixedUpdate();
 
-        Debug.Log("[VacuumTest] 흡착 결과: " + vacuum.lastResult);
-        if (!vacuum.holding)
+        //Debug.Log("[VacuumTest] 흡착 결과: " + vacuum.lastResult);
+        //if (!vacuum.holding)
+        //{
+        //    Debug.LogWarning("[VacuumTest] 흡착 실패로 인해 복귀합니다.");
+        //    vacuum.vacuumOn = false;
+        //    yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
+        //    yield return Move(t, homePosition, homeRotation);
+        //    yield break;
+        //}
+        // ==========================================
+        // [수정] 흡착 최대 3회 시도 로직
+        // ==========================================
+        //Debug.Log("[VacuumTest] 3. 흡착(Vacuum) ON 시도 시작");
+
+        //bool grabSuccess = false;
+        //int maxRetry = 3;
+
+        //for (int attempt = 1; attempt <= maxRetry; attempt++)
+        //{
+        //    Debug.Log($"[VacuumTest] 흡착 시도 {attempt}/{maxRetry}");
+        //    vacuum.vacuumOn = true;
+        //    yield return new WaitForFixedUpdate();
+        //    yield return new WaitForFixedUpdate();
+
+        //    Debug.Log("[VacuumTest] 흡착 결과: " + vacuum.lastResult);
+
+        //    if (vacuum.holding)
+        //    {
+        //        Debug.Log("[VacuumTest] 흡착 성공!");
+        //        grabSuccess = true;
+        //        break; // 성공 시 반복문 탈출 후 정상 이송 공정으로 진행
+        //    }
+        //    else
+        //    {
+        //        Debug.LogWarning($"[VacuumTest] 흡착 실패 (시도 {attempt}/{maxRetry}). 잠시 대기 후 재시도합니다.");
+        //        vacuum.vacuumOn = false;
+        //        yield return new WaitForSeconds(0.3f);
+        //    }
+        //}
+
+        //// 3번 모두 실패했을 때 처리
+        //if (!grabSuccess)
+        //{
+        //    Debug.LogWarning("[VacuumTest] 3회 시도 모두 흡착 실패. 물품을 스킵하고 컨베이어를 작동시킵니다.");
+        //    vacuum.vacuumOn = false;
+
+        //    // TODO: 컨베이어 작동 코드가 있다면 이곳에 추가하세요.
+        //    // 예시: ConveyorController.Instance.StartConveyor();
+
+        //    // 상단으로 빠져나와 홈으로 복귀
+        //    yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
+        //    yield return Move(t, homePosition, homeRotation);
+        //    yield break; // 프로세스 종료 (다음 물품 처리로 연결)
+        //}
+        // 최대 3회 반복 (실패 시 상단 복귀 후 재시도)
+        bool grabSuccess = false;
+        int maxRetry = 3;
+
+        // [추가] 최대 3회 흡착 시도 루프 (실패 시 상단 복귀 후 재시도)
+        for (int attempt = 1; attempt <= maxRetry; attempt++)
         {
-            Debug.LogWarning("[VacuumTest] 흡착 실패로 인해 복귀합니다.");
-            vacuum.vacuumOn = false;
+            Debug.Log($"[VacuumTest] 흡착 시도 {attempt}/{maxRetry} - 상단 접근 시작");
             yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
+
+            Debug.Log("[VacuumTest] 하강 시작");
+            yield return Move(t, top - Vector3.up * pressDepth, alignedTopDownRot, 0.3f);
+
+            Debug.Log("[VacuumTest] 흡착(Vacuum) ON");
+            vacuum.vacuumOn = true;
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+
+            // 기본 물리 판정 결과 확인
+            bool isActuallyHolding = vacuum.holding;
+
+            // [추가] 임의 실패 확률 시뮬레이션 적용
+            if (isActuallyHolding && failureProbability > 0f && Random.value < failureProbability)
+            {
+                Debug.LogWarning($"[VacuumTest] (시뮬레이션) 설정된 확률({failureProbability * 100}%)에 의해 의도적인 흡착 실패가 발생했습니다!");
+                isActuallyHolding = false;
+            }
+
+            Debug.Log("[VacuumTest] 흡착 결과: " + (isActuallyHolding ? "성공" : "실패"));
+
+            if (isActuallyHolding)
+            {
+                Debug.Log("[VacuumTest] 흡착 성공!");
+                grabSuccess = true;
+                break; // 성공 시 반복문 탈출 후 정상 이송 공정으로 진행
+            }
+            else
+            {
+                Debug.LogWarning($"[VacuumTest] 흡착 실패 (시도 {attempt}/{maxRetry}). 흡착을 끄고 상단으로 복귀 후 재시도합니다.");
+                vacuum.vacuumOn = false;
+
+                // 실패 시 상단으로 복귀
+                yield return Move(t, top + Vector3.up * approachHeight, alignedTopDownRot);
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
+
+        // 3번 모두 실패했을 때 처리 (컨베이어 작동 및 홈 복귀)
+        if (!grabSuccess)
+        {
+            Debug.LogWarning("[VacuumTest] 3회 시도 모두 흡착 실패. 컨베이어를 작동시키고 홈으로 복귀합니다.");
+            vacuum.vacuumOn = false;
+
+            // TODO: 컨베이어 작동 코드가 있다면 아래에 추가하세요.
+            // 예: ConveyorController.Instance.StartConveyor();
+
             yield return Move(t, homePosition, homeRotation);
-            yield break;
+            yield break; // 프로세스 종료
         }
 
         Debug.Log("[VacuumTest] 4. 상단으로 들어올림 -> 이송 위치로 이동");
