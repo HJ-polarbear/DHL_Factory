@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - robot
+  - Parcel_Vacuum
+  - Parcel_Gripper
+  - Parcel_Ignore
   layers:
   - Default
   - TransparentFX
