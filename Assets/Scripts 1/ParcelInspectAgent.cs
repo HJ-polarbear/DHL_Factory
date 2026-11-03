@@ -1,379 +1,161 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using UnityEngine;
-
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
 
 public class ParcelInspectAgent : Agent
 {
-    [Header("택배 프리팹 - 루트에 ParcelInfo 필요")]
+    [Header("공정 모드: 외부 상자만 검사, 생성/삭제 안 함")]
+    public bool processMode = true;
+    [Header("학습용 프리팹")]
     public ParcelInfo generalPrefab;
     public ParcelInfo foodPrefab;
     public ParcelInfo fragilePrefab;
-
-    [Header("검사 위치")]
     public Transform inspectionPoint;
-
-    [Header("수동 테스트 모드")]
-    [Tooltip("켜면 자동 판단을 요청하지 않습니다. Context Menu로 요청할 수 있습니다.")]
     public bool manualTestMode = false;
-
-    [Header("로봇 분류 연동")]
-    [Tooltip("학습할 때 OFF, 로봇 분류 시연할 때 ON")]
-    public bool useRobotSorting = false;
-
-    public ParcelSorterRobot sortingRobot;
-
-    [Header("생성 위치 변화 - 검사 위치 로컬 기준")]
-    [Tooltip("컨베이어 좌우 방향 흔들림")]
-    [Range(0f, 0.1f)]
-    public float lateralJitter = 0.03f;
-
-    [Tooltip("컨베이어 진행 방향 흔들림")]
-    [Range(0f, 0.1f)]
-    public float forwardJitter = 0.01f;
-
-    [Header("생성 회전 변화 - Y축")]
-    [Tooltip("박스 회전 각도 흔들림")]
-    [Range(0f, 180f)]
-    public float yawJitter = 15f;
-
-    [Header("보상")]
+    [Range(0f, 0.1f)] public float lateralJitter = 0.03f;
+    [Range(0f, 0.1f)] public float forwardJitter = 0.01f;
+    [Range(0f, 180f)] public float yawJitter = 15f;
     public float correctReward = 1f;
     public float wrongReward = -1f;
-
-    [Header("로그")]
     public bool logEachDecision = false;
+    [Min(1)] public int logEvery = 100;
 
-    [Min(1)]
-    public int logEvery = 100;
+    public event Action<Rigidbody, ParcelCategory> Inspected;
+    public ParcelCategory LastPrediction { get; private set; }
+    public bool LastCorrect { get; private set; }
+    public bool IsDeciding => preparing || waiting;
 
     private ParcelInfo currentParcel;
     private ParcelCategory actualCategory;
-
+    private Rigidbody processParcel;
     private bool ready;
-    private bool parcelPrepared;
-    private bool waitingForDecision;
-    private bool handlingRobot;
-
+    private bool preparing;
+    private bool waiting;
     private int totalCount;
     private int correctCount;
-
     private readonly int[,] confusionTable = new int[3, 3];
-
-    public ParcelCategory LastPrediction { get; private set; }
-    public bool LastCorrect { get; private set; }
 
     public override void Initialize()
     {
-        ready =
-            inspectionPoint != null &&
-            generalPrefab != null &&
-            foodPrefab != null &&
-            fragilePrefab != null;
-
-        if (!ready)
-        {
-            Debug.LogError(
-                "[ParcelInspectAgent] 검사 위치와 프리팹 3개를 연결하세요.",
-                this
-            );
-            return;
-        }
-
-        bool categoryNumbersValid =
-            (int)ParcelCategory.General == 0 &&
-            (int)ParcelCategory.Food == 1 &&
-            (int)ParcelCategory.Fragile == 2;
-
-        bool prefabCategoriesValid =
-            generalPrefab.category == ParcelCategory.General &&
-            foodPrefab.category == ParcelCategory.Food &&
-            fragilePrefab.category == ParcelCategory.Fragile;
-
-        ready = categoryNumbersValid && prefabCategoriesValid;
-
-        if (!ready)
-        {
-            Debug.LogError(
-                "[ParcelInspectAgent] Category 설정을 확인하세요. " +
-                "General=0, Food=1, Fragile=2여야 하며, " +
-                "각 프리팹의 Category도 일치해야 합니다.",
-                this
-            );
-        }
+        if (processMode) { ready = true; return; }
+        ready = inspectionPoint != null && generalPrefab != null &&
+            foodPrefab != null && fragilePrefab != null;
+        if (ready)
+            ready = generalPrefab.category == ParcelCategory.General &&
+                foodPrefab.category == ParcelCategory.Food &&
+                fragilePrefab.category == ParcelCategory.Fragile;
+        if (!ready) Debug.LogError("[Agent] 검사 위치, 프리팹 3개와 Category 설정을 확인하세요.", this);
     }
 
     public override void OnEpisodeBegin()
     {
         StopAllCoroutines();
-
-        parcelPrepared = false;
-        waitingForDecision = false;
-        handlingRobot = false;
-
-        ClearParcel();
-
+        preparing = false;
+        waiting = false;
+        processParcel = null;
+        if (processMode) return;
+        ClearTrainingParcel();
         if (!ready) return;
-
-        StartCoroutine(PrepareAndRequestDecision());
+        SpawnParcel();
+        StartCoroutine(PrepareTrainingDecision());
     }
 
-    private IEnumerator PrepareAndRequestDecision()
+    public bool Inspect(Rigidbody parcel)
     {
-        if (useRobotSorting)
-        {
-            if (sortingRobot == null)
-            {
-                Debug.LogError(
-                    "[ParcelInspectAgent] Sorting Robot을 연결하세요.",
-                    this
-                );
-                yield break;
-            }
+        if (!processMode || !isActiveAndEnabled || parcel == null || IsDeciding)
+            return false;
+        processParcel = parcel;
+        preparing = true;
+        StartCoroutine(PrepareProcessDecision());
+        return true;
+    }
 
-            //while (sortingRobot.IsBusy)
-            //{
-            //    yield return null;
-            //}
-        }
-
-        SpawnParcel();
-
-        // 기존 학습 코드의 카메라 준비 대기 유지
+    private IEnumerator PrepareProcessDecision()
+    {
         yield return null;
         yield return new WaitForEndOfFrame();
+        preparing = false;
+        if (processParcel == null) yield break;
+        waiting = true;
+        RequestDecision();
+    }
 
-        if (currentParcel == null) yield break;
-
-        parcelPrepared = true;
-
-        if (!manualTestMode)
-        {
-            RequestPreparedDecision();
-        }
+    private IEnumerator PrepareTrainingDecision()
+    {
+        preparing = true;
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        preparing = false;
+        if (currentParcel == null || manualTestMode) yield break;
+        waiting = true;
+        RequestDecision();
     }
 
     private void SpawnParcel()
     {
-        int selectedIndex = Random.Range(0, 3);
-        ParcelInfo selectedPrefab = GetPrefab(selectedIndex);
-
-        Vector3 localOffset = new Vector3(
-            Random.Range(-lateralJitter, lateralJitter),
-            0f,
-            Random.Range(-forwardJitter, forwardJitter)
-        );
-
-        Vector3 spawnPosition =
-            inspectionPoint.position +
-            inspectionPoint.rotation * localOffset;
-
-        Quaternion spawnRotation =
-            inspectionPoint.rotation *
-            Quaternion.Euler(
-                0f,
-                Random.Range(-yawJitter, yawJitter),
-                0f
-            );
-
-        currentParcel = Instantiate(
-            selectedPrefab,
-            spawnPosition,
-            spawnRotation
-        );
-
+        int index = UnityEngine.Random.Range(0, 3);
+        ParcelInfo prefab = index == 0 ? generalPrefab : index == 1 ? foodPrefab : fragilePrefab;
+        Vector3 offset = new Vector3(UnityEngine.Random.Range(-lateralJitter, lateralJitter),
+            0f, UnityEngine.Random.Range(-forwardJitter, forwardJitter));
+        Quaternion rotation = inspectionPoint.rotation * Quaternion.Euler(0f,
+            UnityEngine.Random.Range(-yawJitter, yawJitter), 0f);
+        currentParcel = Instantiate(prefab,
+            inspectionPoint.position + inspectionPoint.rotation * offset, rotation);
         currentParcel.gameObject.SetActive(true);
         actualCategory = currentParcel.category;
-
-        Rigidbody[] bodies =
-            currentParcel.GetComponentsInChildren<Rigidbody>();
-
-        foreach (Rigidbody body in bodies)
-        {
+        foreach (Rigidbody body in currentParcel.GetComponentsInChildren<Rigidbody>())
             body.isKinematic = true;
-        }
-    }
-
-    private ParcelInfo GetPrefab(int index)
-    {
-        switch (index)
-        {
-            case 0:
-                return generalPrefab;
-
-            case 1:
-                return foodPrefab;
-
-            default:
-                return fragilePrefab;
-        }
-    }
-
-    [ContextMenu("Request Prepared Decision")]
-    public void RequestPreparedDecision()
-    {
-        if (!Application.isPlaying) return;
-        if (!ready || !parcelPrepared) return;
-        if (currentParcel == null) return;
-        if (waitingForDecision || handlingRobot) return;
-
-        if (useRobotSorting)
-        {
-            if (sortingRobot == null)
-            {
-                Debug.LogError(
-                    "[ParcelInspectAgent] Sorting Robot을 연결하세요.",
-                    this
-                );
-                return;
-            }
-
-            //if (sortingRobot.IsBusy) return;
-        }
-
-        waitingForDecision = true;
-        RequestDecision();
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        if (!waitingForDecision || currentParcel == null) return;
-
+        if (!waiting) return;
         if (actions.DiscreteActions.Length < 1)
         {
-            waitingForDecision = false;
-
-            Debug.LogError(
-                "[ParcelInspectAgent] Discrete Branch 1개, " +
-                "Branch Size 3으로 설정하세요.",
-                this
-            );
+            Debug.LogError("[Agent] Discrete Branch 1개, 크기 3이 필요합니다.", this);
             return;
         }
-
-        int predictedIndex = actions.DiscreteActions[0];
-        int actualIndex = (int)actualCategory;
-
-        if (predictedIndex < 0 || predictedIndex >= 3 ||
-            actualIndex < 0 || actualIndex >= 3)
+        int index = actions.DiscreteActions[0];
+        if (index < 0 || index > 2)
         {
-            waitingForDecision = false;
-
-            Debug.LogError(
-                $"[ParcelInspectAgent] 분류 번호 오류: " +
-                $"정답={actualIndex}, 예측={predictedIndex}",
-                this
-            );
+            Debug.LogError("[Agent] 행동 번호는 0~2여야 합니다.", this);
             return;
         }
-
-        // 동일 상자를 여러 번 판정하지 않도록 차단
-        waitingForDecision = false;
-        parcelPrepared = false;
-
-        bool correct = predictedIndex == actualIndex;
-
-        LastPrediction = (ParcelCategory)predictedIndex;
-        LastCorrect = correct;
-
-        SetReward(correct ? correctReward : wrongReward);
-        RecordResult(actualIndex, predictedIndex, correct);
-
-        Academy.Instance.StatsRecorder.Add(
-            "Parcel/Accuracy",
-            correct ? 1f : 0f
-        );
-
-        if (logEachDecision)
+        waiting = false;
+        LastPrediction = (ParcelCategory)index;
+        if (processMode)
         {
-            Debug.Log(
-                $"[Parcel] 정답: {actualCategory} / " +
-                $"예측: {LastPrediction} / " +
-                $"{(correct ? "정답" : "오답")}",
-                this
-            );
-        }
-
-        if (totalCount % Mathf.Max(1, logEvery) == 0)
-        {
-            float accuracy = 100f * correctCount / totalCount;
-
-            Debug.Log(
-                $"[Parcel] 누적 {totalCount}회 / " +
-                $"정답 {correctCount}회 / " +
-                $"정확도 {accuracy:F1}%",
-                this
-            );
-        }
-
-        if (useRobotSorting)
-        {
-            handlingRobot = true;
-
-            StartCoroutine(
-                HandleRobotSorting(
-                    currentParcel.gameObject,
-                    LastPrediction
-                )
-            );
-        }
-        else
-        {
-            // 학습 시 기존처럼 판정 후 바로 종료
+            Rigidbody target = processParcel;
+            processParcel = null;
+            // 공정 상자는 생성하거나 삭제하지 않습니다.
             EndEpisode();
+            if (target != null) Inspected?.Invoke(target, LastPrediction);
+            return;
         }
-    }
-
-    private IEnumerator HandleRobotSorting(
-        GameObject targetParcel,
-        ParcelCategory predictedCategory
-    )
-    {
-        if (sortingRobot == null)
-        {
-            handlingRobot = false;
-
-            Debug.LogError(
-                "[ParcelInspectAgent] Sorting Robot 연결이 없습니다.",
-                this
-            );
-            yield break;
-        }
-
-        // 실제 정답이 아니라 AI의 예측 결과에 따라 이동
-        //yield return sortingRobot.SortParcel(
-        //    targetParcel,
-        //    predictedCategory
-        //);
-
-        //handlingRobot = false;
-
-        //if (!sortingRobot.LastSortSucceeded)
-        //{
-        //    Debug.LogError(
-        //        "[ParcelInspectAgent] 분류 이동에 실패했습니다. " +
-        //        "수거함 연결과 Console 오류를 확인하세요. " +
-        //        "자동 진행을 중지합니다.",
-        //        this
-        //    );
-        //    yield break;
-        //}
-
-        // 로봇 작업 완료 후 상자 정리
-        ClearParcel();
-
-        // 다음 상자 검사 시작
+        if (currentParcel == null) return;
+        int actual = (int)actualCategory;
+        if (actual < 0 || actual > 2) return;
+        LastCorrect = index == actual;
+        SetReward(LastCorrect ? correctReward : wrongReward);
+        totalCount++;
+        if (LastCorrect) correctCount++;
+        confusionTable[actual, index]++;
+        Academy.Instance.StatsRecorder.Add("Parcel/Accuracy", LastCorrect ? 1f : 0f);
+        if (logEachDecision)
+            Debug.Log($"[Parcel] 정답={actualCategory}, 예측={LastPrediction}, 정답여부={LastCorrect}", this);
+        if (totalCount % Mathf.Max(1, logEvery) == 0)
+            Debug.Log($"[Parcel] {totalCount}회, 정확도={100f * correctCount / totalCount:F1}%", this);
         EndEpisode();
     }
 
-    private void ClearParcel()
+    private void ClearTrainingParcel()
     {
         if (currentParcel == null) return;
-
         currentParcel.gameObject.SetActive(false);
         Destroy(currentParcel.gameObject);
         currentParcel = null;
@@ -382,67 +164,28 @@ public class ParcelInspectAgent : Agent
     public override void Heuristic(in ActionBuffers actionsOut)
     {
         if (actionsOut.DiscreteActions.Length < 1) return;
-
-        var discreteActions = actionsOut.DiscreteActions;
         int selected = 0;
-
 #if ENABLE_INPUT_SYSTEM
         Keyboard keyboard = Keyboard.current;
-
         if (keyboard != null)
         {
-            if (keyboard.digit3Key.isPressed)
-            {
-                selected = 2;
-            }
-            else if (keyboard.digit2Key.isPressed)
-            {
-                selected = 1;
-            }
+            if (keyboard.digit3Key.isPressed) selected = 2;
+            else if (keyboard.digit2Key.isPressed) selected = 1;
         }
 #elif ENABLE_LEGACY_INPUT_MANAGER
-        if (Input.GetKey(KeyCode.Alpha3))
-        {
-            selected = 2;
-        }
-        else if (Input.GetKey(KeyCode.Alpha2))
-        {
-            selected = 1;
-        }
+        if (Input.GetKey(KeyCode.Alpha3)) selected = 2;
+        else if (Input.GetKey(KeyCode.Alpha2)) selected = 1;
 #endif
-
-        discreteActions[0] = selected;
-    }
-
-    private void RecordResult(
-        int actualIndex,
-        int predictedIndex,
-        bool correct
-    )
-    {
-        totalCount++;
-
-        if (correct)
-        {
-            correctCount++;
-        }
-
-        confusionTable[actualIndex, predictedIndex]++;
+        var output = actionsOut.DiscreteActions;
+        output[0] = selected;
     }
 
     [ContextMenu("Print Confusion Table")]
     private void PrintConfusionTable()
     {
-        Debug.Log(
-            "[Parcel] 혼동표: 행=정답, 열=예측\n" +
-            "열 순서: General, Food, Fragile\n" +
-            $"General: {confusionTable[0, 0]}, " +
-            $"{confusionTable[0, 1]}, {confusionTable[0, 2]}\n" +
-            $"Food: {confusionTable[1, 0]}, " +
-            $"{confusionTable[1, 1]}, {confusionTable[1, 2]}\n" +
-            $"Fragile: {confusionTable[2, 0]}, " +
-            $"{confusionTable[2, 1]}, {confusionTable[2, 2]}",
-            this
-        );
+        Debug.Log("[Parcel] 행=정답, 열=예측 (General, Food, Fragile)\n" +
+            $"General: {confusionTable[0, 0]}, {confusionTable[0, 1]}, {confusionTable[0, 2]}\n" +
+            $"Food: {confusionTable[1, 0]}, {confusionTable[1, 1]}, {confusionTable[1, 2]}\n" +
+            $"Fragile: {confusionTable[2, 0]}, {confusionTable[2, 1]}, {confusionTable[2, 2]}", this);
     }
 }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ParcelSpawner : MonoBehaviour
@@ -6,40 +5,67 @@ public class ParcelSpawner : MonoBehaviour
     [Header("생성할 택배 프리팹")]
     public GameObject[] parcelPrefabs;
 
-    [Header("생성 간격")]
+    [Header("생성 설정")]
+    [Tooltip("켜면 지정한 간격마다 계속 생성합니다.")]
+    public bool continuousSpawn = true;
+
+    [Tooltip("택배 생성 간격 (초)")]
+    [Min(0.1f)]
     public float spawnInterval = 3f;
 
+    [Tooltip("생성되는 박스의 실제 크기 (기본값 0.5)")]
+    public Vector3 spawnScale = new Vector3(0.5f, 0.5f, 0.5f);
+
+    [Tooltip("켜면 시작하자마자 첫 박스를 생성합니다.")]
+    public bool spawnImmediately = false;
+
     [Header("생성 위치 확인")]
-    public Vector3 checkBoxSize = new Vector3(0.7f, 0.7f, 0.7f);
+    public Vector3 checkBoxSize = new Vector3(0.5f, 0.5f, 0.5f);
     public LayerMask parcelLayer;
 
-    private readonly List<GameObject> shuffledPrefabs =
-        new List<GameObject>();
-
-    private int nextIndex;
     private float timer;
     private bool paused;
+    private bool singleSpawnCompleted;
 
     private void Start()
     {
-        RefillAndShuffle();
+        timer = 0f;
+        singleSpawnCompleted = false;
 
-        // 시작하자마자 첫 번째 박스 생성 시도
-        TrySpawnParcel();
+        if (!HasValidPrefab())
+        {
+            Debug.LogError("[ParcelSpawner] Parcel Prefabs에 박스 원본을 연결하세요.", this);
+            enabled = false;
+            return;
+        }
+
+        if (spawnImmediately)
+        {
+            if (TrySpawnParcel())
+            {
+                singleSpawnCompleted = true;
+            }
+            else
+            {
+                timer = GetSpawnInterval();
+            }
+        }
     }
 
     private void Update()
     {
-        if (paused || shuffledPrefabs.Count == 0) return;
+        if (paused) return;
+        if (!continuousSpawn && singleSpawnCompleted) return;
 
+        float interval = GetSpawnInterval();
         timer += Time.deltaTime;
 
-        if (timer < spawnInterval) return;
+        if (timer < interval) return;
 
-        // 생성에 성공했을 때만 다음 간격을 다시 셈
         if (TrySpawnParcel())
         {
             timer = 0f;
+            singleSpawnCompleted = true;
         }
     }
 
@@ -50,12 +76,11 @@ public class ParcelSpawner : MonoBehaviour
 
     private bool TrySpawnParcel()
     {
-        if (shuffledPrefabs.Count == 0) return false;
+        if (paused) return false;
 
-        // 생성 위치에 다른 박스가 있으면 생성하지 않음
         bool occupied = Physics.CheckBox(
             transform.position,
-            checkBoxSize * 0.5f,
+            GetHalfExtents(),
             transform.rotation,
             parcelLayer,
             QueryTriggerInteraction.Ignore
@@ -63,44 +88,76 @@ public class ParcelSpawner : MonoBehaviour
 
         if (occupied) return false;
 
-        if (nextIndex >= shuffledPrefabs.Count)
-        {
-            RefillAndShuffle();
-        }
+        GameObject prefab = GetRandomPrefab();
+        if (prefab == null) return false;
 
-        GameObject prefab = shuffledPrefabs[nextIndex];
+        GameObject parcel = Instantiate(
+            prefab,
+            transform.position,
+            transform.rotation
+        );
 
-        Instantiate(prefab, transform.position, transform.rotation);
-        nextIndex++;
+        // 실제 박스 크기(Scale)를 0.5로 설정
+        parcel.transform.localScale = spawnScale;
+        parcel.SetActive(true);
 
-        Debug.Log($"택배 생성: {prefab.name}");
+        Debug.Log($"[ParcelSpawner] 택배 생성: {parcel.name} (크기: {spawnScale})", parcel);
         return true;
     }
 
-    private void RefillAndShuffle()
+    private GameObject GetRandomPrefab()
     {
-        shuffledPrefabs.Clear();
+        if (parcelPrefabs == null) return null;
 
-        if (parcelPrefabs == null) return;
-
+        int validCount = 0;
         foreach (GameObject prefab in parcelPrefabs)
         {
-            if (prefab != null)
-            {
-                shuffledPrefabs.Add(prefab);
-            }
+            if (prefab != null) validCount++;
         }
 
-        // 세 종류를 무작위 순서로 섞음
-        for (int i = shuffledPrefabs.Count - 1; i > 0; i--)
+        if (validCount == 0) return null;
+
+        int selectedIndex = Random.Range(0, validCount);
+        foreach (GameObject prefab in parcelPrefabs)
         {
-            int randomIndex = Random.Range(0, i + 1);
-
-            GameObject temp = shuffledPrefabs[i];
-            shuffledPrefabs[i] = shuffledPrefabs[randomIndex];
-            shuffledPrefabs[randomIndex] = temp;
+            if (prefab == null) continue;
+            if (selectedIndex == 0) return prefab;
+            selectedIndex--;
         }
 
-        nextIndex = 0;
+        return null;
+    }
+
+    private bool HasValidPrefab()
+    {
+        if (parcelPrefabs == null) return false;
+        foreach (GameObject prefab in parcelPrefabs)
+        {
+            if (prefab != null) return true;
+        }
+        return false;
+    }
+
+    private float GetSpawnInterval()
+    {
+        return Mathf.Max(0.1f, spawnInterval);
+    }
+
+    private Vector3 GetHalfExtents()
+    {
+        return new Vector3(
+            Mathf.Max(0.01f, Mathf.Abs(checkBoxSize.x)) * 0.5f,
+            Mathf.Max(0.01f, Mathf.Abs(checkBoxSize.y)) * 0.5f,
+            Mathf.Max(0.01f, Mathf.Abs(checkBoxSize.z)) * 0.5f
+        );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Matrix4x4 previousMatrix = Gizmos.matrix;
+        Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(Vector3.zero, GetHalfExtents() * 2f);
+        Gizmos.matrix = previousMatrix;
     }
 }
