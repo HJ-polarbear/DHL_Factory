@@ -1,159 +1,81 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ParcelStationController : MonoBehaviour
 {
     [Header("컨베이어 제어 연결")]
-    public InspectionController inspectionController; // 검사/컨베이어 제어 컴포넌트 연동
+    public InspectionController inspectionController;
 
     [Header("연결 컴포넌트")]
-    public VacuumPickPlaceTestVol2 vacuumTest;   // 흡착형 테스트 스크립트 연결
-    public GripperPickPlaceTest gripperTest;     // 집게형 테스트 스크립트 연결
-    public Transform detectionZoneCenter;
-    public Vector3 detectionBoxSize = new Vector3(0.5f, 0.3f, 0.5f);
+    public VacuumPickPlaceTestVol2 vacuumTest;
+    public GripperPickPlaceTest gripperTest;
 
-    // [수정됨] AI 비전 모델 연동을 위한 에이전트 레퍼런스 추가
-    [Header("AI 비전 모델 연동")]
-    //public ParcelInspectAgent inspectAgent;      // CNN 모델이 탑재된 에이전트 스크립트 연결
+    public Transform detectionZoneCenter;
+
+    public Vector3 detectionBoxSize =
+        new Vector3(0.5f, 0.3f, 0.5f);
 
     [Header("태그 3가지 분류 설정")]
-    public string tagVacuum = "Parcel_Vacuum";    // 태그 1: 흡착형 동작 대상
-    public string tagGripper = "Parcel_Gripper";  // 태그 2: 집게형 동작 대상
-    public string tagIgnore = "Parcel_Ignore";    // 태그 3: 무시(동작 안 함) 대상
+    public string tagVacuum = "Parcel_Vacuum";
+    public string tagGripper = "Parcel_Gripper";
+    public string tagIgnore = "Parcel_Ignore";
 
     [Header("감지 및 정지 조건")]
-    public float requiredStableTime = 1.0f;   // 목표가 정지해 있어야 하는 최소 시간 (초)
-    public float movementThreshold = 0.001f;  // 정지 판단 기준 거리
+    public float requiredStableTime = 1.0f;
+    public float movementThreshold = 0.001f;
+
+    [Header("연속 감지 방지")]
+    public float processCooldown = 1.0f;
 
     [Header("동작 상태")]
     [SerializeField] private bool isRunning = false;
+
     private Rigidbody detectedParcel = null;
     private string detectedTagType = "";
+
+    private Rigidbody currentCandidate = null;
     private Vector3 lastParcelPosition;
     private float stableTimer = 0f;
 
+    // 일반 택배 로그 중복 출력 방지
+    private readonly HashSet<Rigidbody> loggedGeneralParcels =
+        new HashSet<Rigidbody>();
 
-    void Start()
+    // 공정 완료 후 잠깐 감지 방지
+    private float nextDetectionTime = 0f;
+
+    private void Start()
     {
         if (detectionZoneCenter == null)
-            detectionZoneCenter = transform;
-
-        // 컨트롤러가 제어하므로 개별 테스트 스크립트 자체의 자동 시작은 끔
-        if (vacuumTest != null) vacuumTest.runOnStart = false;
-        if (gripperTest != null) gripperTest.runOnStart = false;
-    }
-
-    void Update()
-    {
-        if (!isRunning)
         {
-            CheckAndVerifyTarget();
+            detectionZoneCenter = transform;
+        }
+
+        // 로봇 테스트 스크립트 자동 시작 방지
+        if (vacuumTest != null)
+        {
+            vacuumTest.runOnStart = false;
+        }
+
+        if (gripperTest != null)
+        {
+            gripperTest.runOnStart = false;
         }
     }
 
-    //void CheckAndVerifyTarget()
-    //{
-    //    Collider[] hitColliders = Physics.OverlapBox(
-    //        detectionZoneCenter.position,
-    //        detectionBoxSize * 0.5f,
-    //        detectionZoneCenter.rotation
-    //    );
+    private void Update()
+    {
+        if (isRunning)
+            return;
 
-    //    Rigidbody currentCandidate = null;
-    //    string matchedTag = "";
+        if (Time.time < nextDetectionTime)
+            return;
 
-    //    foreach (var hit in hitColliders)
-    //    {
-    //        // [수정됨] 태그 단독 판단 대신, AI 에이전트가 연결되어 있다면 AI의 예측 결과(LastPrediction)를 우선 반영하도록 로직 추가
-    //        if (inspectAgent != null)
-    //        {
-    //            ParcelCategory category = inspectAgent.LastPrediction;
+        CheckAndVerifyTarget();
+    }
 
-    //            // AI 분류 결과에 따른 태그/분기 매핑
-    //            if (category == ParcelCategory.Food)
-    //            {
-    //                matchedTag = tagGripper; // 식품류 -> 집게형 로봇 매핑
-    //            }
-    //            else if (category == ParcelCategory.Fragile)
-    //            {
-    //                matchedTag = tagVacuum;  // 파손주의류 -> 흡착형 로봇 매핑
-    //            }
-    //            else
-    //            {
-    //                // 무시(Ignore) 또는 기타 카테고리 처리
-    //                Debug.Log($"[StationController] AI 판정 결과 무시/기타 대상 감지: 컨베이어를 재가동합니다.");
-    //                if (inspectionController != null)
-    //                {
-    //                    inspectionController.ReleaseParcel();
-    //                }
-    //                continue;
-    //            }
-    //        }
-    //        else
-    //        {
-    //            // [기존 호환] AI 에이전트가 연결되지 않은 경우 기존 태그 기반 판정 사용
-    //            if (hit.CompareTag(tagVacuum))
-    //            {
-    //                matchedTag = tagVacuum;
-    //            }
-    //            else if (hit.CompareTag(tagGripper))
-    //            {
-    //                matchedTag = tagGripper;
-    //            }
-    //            else if (hit.CompareTag(tagIgnore))
-    //            {
-    //                Rigidbody ignoreRb = hit.GetComponent<Rigidbody>();
-    //                if (ignoreRb != null)
-    //                {
-    //                    Debug.Log($"[StationController] 무시 태그({tagIgnore}) 감지: 공정을 건너뛰고 컨베이어를 재가동합니다.");
-    //                    if (inspectionController != null)
-    //                    {
-    //                        inspectionController.ReleaseParcel();
-    //                    }
-    //                }
-    //                continue;
-    //            }
-    //            else
-    //            {
-    //                continue;
-    //            }
-    //        }
-    //        if (currentCandidate != null)
-    //    {
-    //        float distanceMoved = Vector3.Distance(currentCandidate.position, lastParcelPosition);
-
-    //        if (distanceMoved < movementThreshold)
-    //        {
-    //            stableTimer += Time.deltaTime;
-
-    //            if (stableTimer >= requiredStableTime)
-    //            {
-    //                detectedParcel = currentCandidate;
-    //                Debug.Log($"[StationController] 목표 정지 감지 [{detectedTagType}]: {detectedParcel.name}. 공정을 시작합니다.");
-
-    //                stableTimer = 0f;
-    //                StartCoroutine(RunStationProcess(detectedParcel, detectedTagType));
-    //                return;
-    //            }
-    //        }
-    //        else
-    //        {
-    //            stableTimer = 0f;
-    //        }
-
-    //        lastParcelPosition = currentCandidate.position;
-    //    }
-    //    else
-    //    {
-    //        stableTimer = 0f;
-    //        if (detectedParcel != null)
-    //        {
-    //            lastParcelPosition = detectedParcel.position;
-    //        }
-    //    }
-    //
-    
-    void CheckAndVerifyTarget()
+    private void CheckAndVerifyTarget()
     {
         Collider[] hitColliders = Physics.OverlapBox(
             detectionZoneCenter.position,
@@ -161,134 +83,244 @@ public class ParcelStationController : MonoBehaviour
             detectionZoneCenter.rotation
         );
 
-        Rigidbody currentCandidate = null;
+        Rigidbody candidate = null;
         string matchedTag = "";
 
-        foreach (var hit in hitColliders)
+        foreach (Collider hit in hitColliders)
         {
-            // 태그별 분기 확인
-            if (hit.CompareTag(tagVacuum))
-            {
-                matchedTag = tagVacuum;
-            }
-            else if (hit.CompareTag(tagGripper))
-            {
-                matchedTag = tagGripper;
-            }
-            else if (hit.CompareTag(tagIgnore))
-            {
-                // [추가] 무시 태그일 경우 정지 공정을 진행하지 않고 컨베이어를 즉시 재가동함
-                Rigidbody ignoreRb = hit.GetComponent<Rigidbody>();
-                if (ignoreRb != null)
-                {
-                    Debug.Log($"[StationController] 무시 태그({tagIgnore}) 감지: 공정을 건너뛰고 컨베이어를 재가동합니다.");
+            Rigidbody rb = hit.attachedRigidbody;
 
-                    if (inspectionController != null)
-                    {
-                        inspectionController.ReleaseParcel();
-                    }
-                }
-                continue; // 해당 오브젝트 처리 건너뜀
-            }
-            else
-            {
+            if (rb == null)
                 continue;
+
+            // Rigidbody 또는 감지된 Collider의 태그 확인
+            if (HasTag(hit, rb, tagVacuum))
+            {
+                candidate = rb;
+                matchedTag = tagVacuum;
+                break;
             }
 
-            Rigidbody rb = hit.GetComponent<Rigidbody>();
-            if (rb != null)
+            if (HasTag(hit, rb, tagGripper))
             {
-                currentCandidate = rb;
-                detectedTagType = matchedTag;
+                candidate = rb;
+                matchedTag = tagGripper;
+                break;
+            }
+
+            if (HasTag(hit, rb, tagIgnore))
+            {
+                candidate = rb;
+                matchedTag = tagIgnore;
                 break;
             }
         }
 
-        if (currentCandidate != null)
+        // 감지된 택배가 없으면 초기화
+        if (candidate == null)
         {
-            float distanceMoved = Vector3.Distance(currentCandidate.position, lastParcelPosition);
+            currentCandidate = null;
+            stableTimer = 0f;
+            return;
+        }
 
-            if (distanceMoved < movementThreshold)
-            {
-                stableTimer += Time.deltaTime;
+        // 새로운 택배를 감지한 경우
+        if (candidate != currentCandidate)
+        {
+            currentCandidate = candidate;
+            lastParcelPosition = candidate.position;
+            stableTimer = 0f;
+            return;
+        }
 
-                if (stableTimer >= requiredStableTime)
-                {
-                    detectedParcel = currentCandidate;
-                    Debug.Log($"[StationController] 목표 정지 감지 [{detectedTagType}]: {detectedParcel.name}. 공정을 시작합니다.");
+        float distanceMoved = Vector3.Distance(
+            candidate.position,
+            lastParcelPosition
+        );
 
-                    stableTimer = 0f;
-                    StartCoroutine(RunStationProcess(detectedParcel, detectedTagType));
-                    return;
-                }
-            }
-            else
-            {
-                stableTimer = 0f;
-            }
-
-            lastParcelPosition = currentCandidate.position;
+        // 박스가 정지했는지 확인
+        if (distanceMoved < movementThreshold)
+        {
+            stableTimer += Time.deltaTime;
         }
         else
         {
             stableTimer = 0f;
-            if (detectedParcel != null)
-            {
-                lastParcelPosition = detectedParcel.position;
-            }
         }
+
+        lastParcelPosition = candidate.position;
+
+        // 설정된 시간만큼 정지한 경우에만 처리
+        if (stableTimer < requiredStableTime)
+            return;
+
+        // 일반 택배: 로봇 동작 없이 통과
+        if (matchedTag == tagIgnore)
+        {
+            ProcessGeneralParcel(candidate);
+            return;
+        }
+
+        // 파손주의 / 식품 택배
+        detectedParcel = candidate;
+        detectedTagType = matchedTag;
+
+        stableTimer = 0f;
+
+        Debug.Log(
+            $"[StationController] 목표 정지 감지 " +
+            $"[{detectedTagType}]: {detectedParcel.name}. " +
+            "공정을 시작합니다."
+        );
+
+        StartCoroutine(
+            RunStationProcess(detectedParcel, detectedTagType)
+        );
     }
-    IEnumerator RunStationProcess(Rigidbody targetParcel, string tagType)
+
+    private bool HasTag(
+        Collider hit,
+        Rigidbody rb,
+        string targetTag
+    )
+    {
+        if (string.IsNullOrEmpty(targetTag))
+            return false;
+
+        return rb.CompareTag(targetTag)
+            || hit.CompareTag(targetTag);
+    }
+
+    private void ProcessGeneralParcel(Rigidbody parcel)
+    {
+        if (parcel == null)
+            return;
+
+        // 동일 박스 로그는 한 번만 출력
+        if (loggedGeneralParcels.Add(parcel))
+        {
+            Debug.Log(
+                $"[StationController] 일반 택배 감지: " +
+                $"{parcel.name}. 로봇 공정을 건너뜁니다."
+            );
+        }
+
+        // 일반 박스는 로봇 없이 컨베이어 재가동
+        if (inspectionController != null)
+        {
+            inspectionController.ReleaseParcel();
+        }
+        else
+        {
+            Debug.LogError(
+                "[StationController] InspectionController가 연결되지 않았습니다!"
+            );
+        }
+
+        // 감지 상태 초기화
+        stableTimer = 0f;
+        currentCandidate = null;
+
+        nextDetectionTime =
+            Time.time + Mathf.Max(0f, processCooldown);
+    }
+
+    private IEnumerator RunStationProcess(
+        Rigidbody targetParcel,
+        string tagType
+    )
     {
         isRunning = true;
 
-        // 태그 종류에 따른 공정 분기 실행
+        // 흡착 로봇
         if (tagType == tagVacuum)
         {
             if (vacuumTest != null)
             {
                 vacuumTest.parcel = targetParcel;
-                Debug.Log("[StationController]  [흡착형] Pick & Place 공정 시작");
+
+                Debug.Log(
+                    "[StationController] [흡착형] Pick & Place 공정 시작"
+                );
+
                 yield return StartCoroutine(vacuumTest.Run());
             }
             else
             {
-                Debug.LogError("[StationController] 흡착형 테스트 스크립트(VacuumTest)가 연결되지 않았습니다!");
+                Debug.LogError(
+                    "[StationController] VacuumTest가 연결되지 않았습니다!"
+                );
             }
         }
+
+        // 집게 로봇
         else if (tagType == tagGripper)
         {
             if (gripperTest != null)
             {
                 gripperTest.parcel = targetParcel;
-                Debug.Log("[StationController]  [집게형] Pick & Place 공정 시작");
+
+                Debug.Log(
+                    "[StationController] [집게형] Pick & Place 공정 시작"
+                );
+
                 yield return StartCoroutine(gripperTest.Run());
             }
             else
             {
-                Debug.LogError("[StationController] 집게형 테스트 스크립트(GripperTest)가 연결되지 않았습니다!");
+                Debug.LogError(
+                    "[StationController] GripperTest가 연결되지 않았습니다!"
+                );
             }
         }
-        // 로봇 공정 완료 후 컨베이어 재가동 신호 전달
+
+        // 로봇 공정 종료 후 컨베이어 재가동
         if (inspectionController != null)
         {
             inspectionController.ReleaseParcel();
         }
-        isRunning = false;
+
         detectedParcel = null;
+        detectedTagType = "";
+
+        currentCandidate = null;
         stableTimer = 0f;
 
-        yield return new WaitForSeconds(1.0f); // 연속 감지 방지 딜레이
+        nextDetectionTime =
+            Time.time + Mathf.Max(0f, processCooldown);
+
+        isRunning = false;
+
+        Debug.Log(
+            "[StationController] 공정 종료. 다음 택배를 기다립니다."
+        );
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
-        Transform center = detectionZoneCenter != null ? detectionZoneCenter : transform;
+        Transform center =
+            detectionZoneCenter != null
+                ? detectionZoneCenter
+                : transform;
+
         Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
-        Gizmos.matrix = Matrix4x4.TRS(center.position, center.rotation, Vector3.one);
-        Gizmos.DrawCube(Vector3.zero, detectionBoxSize);
+
+        Gizmos.matrix = Matrix4x4.TRS(
+            center.position,
+            center.rotation,
+            Vector3.one
+        );
+
+        Gizmos.DrawCube(
+            Vector3.zero,
+            detectionBoxSize
+        );
 
         Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(Vector3.zero, detectionBoxSize);
+
+        Gizmos.DrawWireCube(
+            Vector3.zero,
+            detectionBoxSize
+        );
     }
 }
