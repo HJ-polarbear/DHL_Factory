@@ -3212,10 +3212,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b64c78281b3eac143976228b179af562, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParcelInspectAgent
+  m_PolicyFactory: {fileID: 0}
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
+  m_Reward: 0
+  m_GroupReward: 0
+  m_CumulativeReward: 0
+  m_RequestAction: 0
+  m_RequestDecision: 0
+  m_StepCount: 0
+  m_CompletedEpisodes: 0
+  m_EpisodeId: 0
+  m_Initialized: 0
+  m_GroupId: 0
   generalPrefab: {fileID: 8809305729541256151, guid: 46f39866577421b4d831dff1e8587906, type: 3}
   foodPrefab: {fileID: 5360821103559909008, guid: 351fce6c3a0ab2242980d1a99842a32a, type: 3}
   fragilePrefab: {fileID: 4183159607049092994, guid: a5b91bf6affa7164993b9c1c28c12308, type: 3}
@@ -3228,6 +3239,13 @@ MonoBehaviour:
   wrongReward: -1
   logEachDecision: 0
   logEvery: 100
+  currentParcel: {fileID: 0}
+  actualCategory: 0
+  ready: 0
+  totalCount: 0
+  correctCount: 0
+  <LastPrediction>k__BackingField: 0
+  <LastCorrect>k__BackingField: 0
 --- !u!114 &2005922786
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3245,8 +3263,8 @@ MonoBehaviour:
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 03000000i
-    VectorActionSize: 03000000i
+      BranchSizes: 03000000
+    VectorActionSize: 03000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
@@ -3363,6 +3381,16 @@ MonoBehaviour:
   onParcelReady:
     m_PersistentCalls:
       m_Calls: []
+  inspectionLight: {fileID: 0}
+  idleColor: {r: 1, g: 1, b: 1, a: 1}
+  inspectionColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  completeColor: {r: 0, g: 1, b: 0, a: 1}
+  idleIntensity: 0.5
+  blinkMinIntensity: 1
+  blinkMaxIntensity: 3
+  blinkSpeed: 2
+  completeIntensity: 3
+  completeLightDuration: 2
 --- !u!1 &2067598895 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5131119855505455910, guid: 23326cf0d017fef449d7a591b1294d1d, type: 3}
