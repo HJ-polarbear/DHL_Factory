@@ -5,11 +5,11 @@ using UnityEngine;
 /// <summary>
 /// CNN 비전 인식 결과로 구분할 물품 분류 유형
 /// </summary>
-public enum ParcelCategory
+public enum RobotParcelCategory
 {
-    Unknown,      // 미인식 / 해당 없음 (스토퍼를 열어서 통과시킴)
-    SuctionType,  // 흡착형 그리퍼(Suction) 전용 물품 (예: 상자, 납작한 물품)
-    GripperType   // 집게형 그리퍼(Finger Gripper) 전용 물품 (예: 원통, 불규칙 부품)
+    SuctionType,
+    GripperType,
+    Unknown
 }
 
 public class ParcelSortingSequence : MonoBehaviour
@@ -105,21 +105,21 @@ public class ParcelSortingSequence : MonoBehaviour
         yield return new WaitForSeconds(0.3f); // 물품 안착 대기
 
         // Step 2. CNN 비전 인식 수행 (임시 Mockup - 추후 실제 CNN 연동 스크립트로 대체)
-        ParcelCategory category = SimulateCNNInference(currentTargetParcel);
+        RobotParcelCategory category = SimulateCNNInference(currentTargetParcel);
         Debug.Log($"[Sorting] CNN 인식 결과: {category}");
 
         // Step 3. 분류 조건에 따른 분기 처리
         switch (category)
         {
-            case ParcelCategory.SuctionType:
+            case RobotParcelCategory.SuctionType:
                 yield return ProcessSuctionTransfer(destinationConveyorA);
                 break;
 
-            case ParcelCategory.GripperType:
+            case RobotParcelCategory.GripperType:
                 yield return ProcessGripperTransfer(destinationConveyorB);
                 break;
 
-            case ParcelCategory.Unknown:
+            case RobotParcelCategory.Unknown:
             default:
                 // 어느 분류에도 해당하지 않는 경우: 스토퍼를 열어 통과시킴
                 yield return ProcessPassThrough();
@@ -227,15 +227,15 @@ public class ParcelSortingSequence : MonoBehaviour
     /// <summary>
     /// CNN 추론 결과 모의 반환 (추후 PyTorch/TensorFlow 연동 스크립트로 교체)
     /// </summary>
-    private ParcelCategory SimulateCNNInference(Rigidbody parcel)
+    private RobotParcelCategory SimulateCNNInference(Rigidbody parcel)
     {
-        if (parcel == null) return ParcelCategory.Unknown;
+        if (parcel == null) return RobotParcelCategory.Unknown;
 
         // 예시: 태그나 스크립트 이름을 읽어 구별 (테스트용)
-        if (parcel.CompareTag("SuctionTarget")) return ParcelCategory.SuctionType;
-        if (parcel.CompareTag("GripperTarget")) return ParcelCategory.GripperType;
+        if (parcel.CompareTag("SuctionTarget")) return RobotParcelCategory.SuctionType;
+        if (parcel.CompareTag("GripperTarget")) return RobotParcelCategory.GripperType;
 
-        return ParcelCategory.Unknown;
+        return RobotParcelCategory.Unknown;
     }
 
     /// <summary>
