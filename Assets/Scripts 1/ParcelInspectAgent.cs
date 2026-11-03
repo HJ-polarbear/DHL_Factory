@@ -135,10 +135,10 @@ public class ParcelInspectAgent : Agent
                 yield break;
             }
 
-            while (sortingRobot.IsBusy)
-            {
-                yield return null;
-            }
+            //while (sortingRobot.IsBusy)
+            //{
+            //    yield return null;
+            //}
         }
 
         SpawnParcel();
@@ -232,7 +232,7 @@ public class ParcelInspectAgent : Agent
                 return;
             }
 
-            if (sortingRobot.IsBusy) return;
+            //if (sortingRobot.IsBusy) return;
         }
 
         waitingForDecision = true;
@@ -345,23 +345,23 @@ public class ParcelInspectAgent : Agent
         }
 
         // 실제 정답이 아니라 AI의 예측 결과에 따라 이동
-        yield return sortingRobot.SortParcel(
-            targetParcel,
-            predictedCategory
-        );
+        //yield return sortingRobot.SortParcel(
+        //    targetParcel,
+        //    predictedCategory
+        //);
 
-        handlingRobot = false;
+        //handlingRobot = false;
 
-        if (!sortingRobot.LastSortSucceeded)
-        {
-            Debug.LogError(
-                "[ParcelInspectAgent] 분류 이동에 실패했습니다. " +
-                "수거함 연결과 Console 오류를 확인하세요. " +
-                "자동 진행을 중지합니다.",
-                this
-            );
-            yield break;
-        }
+        //if (!sortingRobot.LastSortSucceeded)
+        //{
+        //    Debug.LogError(
+        //        "[ParcelInspectAgent] 분류 이동에 실패했습니다. " +
+        //        "수거함 연결과 Console 오류를 확인하세요. " +
+        //        "자동 진행을 중지합니다.",
+        //        this
+        //    );
+        //    yield break;
+        //}
 
         // 로봇 작업 완료 후 상자 정리
         ClearParcel();
