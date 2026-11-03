@@ -3,205 +3,274 @@ using UnityEngine;
 
 public class FactoryCameraOrbit : MonoBehaviour
 {
-    [Header("검사대 중심")]
+    [Header("공장 회전 중심")]
     public Transform target;
 
-    [Header("대기 시간")]
+    [Header("시작 화면")]
     public float initialWait = 5f;
-    public float inspectionWait = 5f;
-    public float roundWait = 3f;
 
-    [Header("회전 각도")]
-    [Tooltip("첫 번째 검사대 촬영 각도")]
-    public float firstInspectionAngle = 90f;
+    [Header("반 바퀴 회전 시간")]
+    public float firstHalfDuration = 20f;
+    public float secondHalfDuration = 20f;
 
-    [Header("회전 시간")]
-    [Tooltip("시작 위치에서 첫 번째 촬영 위치까지 걸리는 시간")]
-    public float firstOrbitDuration = 15f;
+    [Header("반대편 촬영")]
+    public float inspectionWait = 3f;
 
-    [Tooltip("첫 번째 촬영 위치에서 반대쪽까지 걸리는 시간")]
-    public float halfOrbitDuration = 30f;
+    [Header("로봇 작업 촬영")]
+    public float robotWorkWait = 20f;
 
-    [Tooltip("두 번째 촬영 위치에서 시작 위치까지 걸리는 시간")]
-    public float returnOrbitDuration = 15f;
+    [Header("줌인 / 줌아웃 시간")]
+    public float zoomInDuration = 5f;
+    public float zoomOutDuration = 5f;
 
-    [Header("줌 설정")]
-    [Tooltip("카메라가 검사대 쪽으로 가까워지는 거리")]
-    public float zoomDistance = 10f;
+    [Header("로봇 줌인 위치")]
+    public Vector3 robotZoomPosition;
+    public Vector3 robotZoomRotation;
 
-    [Tooltip("줌인할 때 카메라를 추가로 올리는 높이")]
-    public float zoomHeight = 4f;
+    [Header("카메라 회전 반경")]
+    [Range(0.3f, 1f)]
+    [Tooltip("1 = 기존 거리, 0.65 = 기존보다 35% 가까운 거리")]
+    public float orbitRadiusScale = 0.65f;
 
-    public float zoomInDuration = 8f;
-    public float zoomOutDuration = 8f;
+    [Header("회전 경로 진입 / 복귀 시간")]
+    [Tooltip("시작 화면에서 가까운 회전 경로로 이동하는 시간")]
+    public float orbitEntryDuration = 3f;
 
-    [Header("회전 중 위아래 움직임")]
-    public float heightAmount = 2f;
+    [Tooltip("회전 완료 후 원래 시작 화면으로 돌아오는 시간")]
+    public float orbitExitDuration = 3f;
+
+    [Header("회전 중 높이 변화")]
+    public float heightAmount = 0f;
 
     private Vector3 startPosition;
     private Quaternion startRotation;
-    private Vector3 startOffset;
+
     private Vector3 center;
+    private Vector3 startOffset;
+
+    private Vector3 orbitStartPosition;
+    private Vector3 oppositePosition;
+    private Quaternion oppositeRotation;
 
     private void Start()
     {
         if (target == null)
         {
             Debug.LogWarning(
-                "FactoryCameraOrbit: Target에 CameraTarget을 연결해주세요."
+                "FactoryCameraOrbit: CameraTarget을 연결해주세요."
             );
 
             enabled = false;
             return;
         }
 
+        // 현재 Main Camera의 위치와 각도를 시작 화면으로 저장
         startPosition = transform.position;
         startRotation = transform.rotation;
-        center = target.position;
-        startOffset = startPosition - center;
 
-        if (startOffset.magnitude < 0.01f)
+        center = target.position;
+
+        // 현재 카메라와 회전 중심 사이의 거리
+        Vector3 originalOffset = startPosition - center;
+
+        if (originalOffset.magnitude < 0.01f)
         {
             Debug.LogWarning(
-                "FactoryCameraOrbit: 카메라와 Target 위치가 너무 가깝습니다."
+                "FactoryCameraOrbit: 카메라와 Target이 너무 가깝습니다."
             );
 
             enabled = false;
             return;
         }
+
+        // 회전 반경을 줄여서 공장에 가까운 경로 생성
+        startOffset = originalOffset * orbitRadiusScale;
+
+        // 가까워진 회전 시작 위치
+        orbitStartPosition = center + startOffset;
+
+        // 가까워진 회전 경로의 정확한 반대편
+        oppositePosition = GetOrbitPosition(180f);
+
+        oppositeRotation = Quaternion.LookRotation(
+            center - oppositePosition
+        );
 
         StartCoroutine(CameraRoutine());
     }
 
     private IEnumerator CameraRoutine()
     {
-        // 시작 화면을 5초간 그대로 유지
+        // 1. 현재 Main Camera 시작 화면 유지
         yield return new WaitForSeconds(initialWait);
 
-        while (true)
-        {
-            float secondInspectionAngle = firstInspectionAngle + 180f;
+        // 2. 공장에 더 가까운 회전 경로로 이동
+        yield return MoveCamera(
+            startPosition,
+            startRotation,
+            orbitStartPosition,
+            startRotation,
+            orbitEntryDuration
+        );
 
-            // 시작 위치에서 첫 번째 촬영 위치까지 회전
-            yield return Orbit(
-                0f,
-                firstInspectionAngle,
-                firstOrbitDuration,
-                true,
-                false
-            );
+        // 3. 가까운 거리에서 반 바퀴 회전
+        yield return Orbit(
+            0f,
+            180f,
+            firstHalfDuration,
+            false
+        );
 
-            // 첫 번째 위치에서 줌인 후 대기
-            yield return Zoom(firstInspectionAngle, true);
-            yield return new WaitForSeconds(inspectionWait);
-            yield return Zoom(firstInspectionAngle, false);
+        // 4. 반대편에서 잠시 정지
+        transform.SetPositionAndRotation(
+            oppositePosition,
+            oppositeRotation
+        );
 
-            // 반대편까지 반 바퀴 회전
-            yield return Orbit(
-                firstInspectionAngle,
-                secondInspectionAngle,
-                halfOrbitDuration,
-                false,
-                false
-            );
+        yield return new WaitForSeconds(inspectionWait);
 
-            // 반대편에서도 줌인 후 대기
-            yield return Zoom(secondInspectionAngle, true);
-            yield return new WaitForSeconds(inspectionWait);
-            yield return Zoom(secondInspectionAngle, false);
+        // 5. 로봇팔 두 대 줌인
+        yield return MoveCamera(
+            oppositePosition,
+            oppositeRotation,
+            robotZoomPosition,
+            Quaternion.Euler(robotZoomRotation),
+            zoomInDuration
+        );
 
-            // 처음 위치로 돌아옴
-            yield return Orbit(
-                secondInspectionAngle,
-                360f,
-                returnOrbitDuration,
-                false,
-                true
-            );
+        // 6. 로봇 분류 작업 확대 촬영
+        yield return new WaitForSeconds(robotWorkWait);
 
-            transform.SetPositionAndRotation(
-                startPosition,
-                startRotation
-            );
+        // 7. 반대편 회전 위치로 줌아웃
+        yield return MoveCamera(
+            transform.position,
+            transform.rotation,
+            oppositePosition,
+            oppositeRotation,
+            zoomOutDuration
+        );
 
-            yield return new WaitForSeconds(roundWait);
-        }
+        // 8. 가까운 거리에서 나머지 반 바퀴 회전
+        yield return Orbit(
+            180f,
+            360f,
+            secondHalfDuration,
+            true
+        );
+
+        // 9. 원래 Main Camera 시작 화면으로 복귀
+        yield return MoveCamera(
+            transform.position,
+            transform.rotation,
+            startPosition,
+            startRotation,
+            orbitExitDuration
+        );
+
+        // 10. 처음 위치에서 완전히 정지
+        transform.SetPositionAndRotation(
+            startPosition,
+            startRotation
+        );
     }
 
+    // 회전 각도에 따른 카메라 위치 계산
+    private Vector3 GetOrbitPosition(float angle)
+    {
+        Vector3 rotatedOffset =
+            Quaternion.Euler(0f, angle, 0f) * startOffset;
+
+        return center + rotatedOffset;
+    }
+
+    // 공장 중심을 기준으로 반 바퀴 회전
     private IEnumerator Orbit(
         float fromAngle,
         float toAngle,
         float duration,
-        bool startFromOriginalRotation,
         bool returnToOriginalRotation
     )
     {
-        float elapsed = 0f;
-        float moveDuration = Mathf.Max(duration, 0.01f);
+        if (duration <= 0f)
+        {
+            Vector3 instantPosition = GetOrbitPosition(toAngle);
 
-        while (elapsed < moveDuration)
+            Quaternion instantRotation = returnToOriginalRotation
+                ? startRotation
+                : Quaternion.LookRotation(center - instantPosition);
+
+            transform.SetPositionAndRotation(
+                instantPosition,
+                instantRotation
+            );
+
+            yield break;
+        }
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
 
-            float progress = Mathf.Clamp01(elapsed / moveDuration);
-            float smooth = Mathf.SmoothStep(0f, 1f, progress);
+            float progress = Mathf.Clamp01(
+                elapsed / duration
+            );
 
-            float angle = Mathf.Lerp(fromAngle, toAngle, smooth);
+            // 일정한 회전 속도
+            float angle = Mathf.Lerp(
+                fromAngle,
+                toAngle,
+                progress
+            );
 
-            Vector3 offset =
-                Quaternion.Euler(0f, angle, 0f) * startOffset;
+            Vector3 orbitPosition = GetOrbitPosition(angle);
 
-            // 각 회전 구간의 시작과 끝에서는 높이 변화가 0
             float heightOffset =
                 Mathf.Sin(progress * Mathf.PI) * heightAmount;
 
             transform.position =
-                center + offset + Vector3.up * heightOffset;
+                orbitPosition + Vector3.up * heightOffset;
 
             Quaternion lookRotation = Quaternion.LookRotation(
                 center - transform.position
             );
 
-            if (startFromOriginalRotation)
+            if (returnToOriginalRotation)
             {
-                transform.rotation = Quaternion.Slerp(
-                    startRotation,
-                    lookRotation,
-                    smooth
-                );
-            }
-            else if (returnToOriginalRotation)
-            {
-                float returnBlend = Mathf.InverseLerp(
-                    0.8f,
-                    1f,
-                    progress
-                );
-
-                returnBlend = Mathf.SmoothStep(
+                // 마지막 회전에서 원래 카메라 각도로 복귀
+                float blend = Mathf.SmoothStep(
                     0f,
                     1f,
-                    returnBlend
+                    Mathf.InverseLerp(0.8f, 1f, progress)
                 );
 
                 transform.rotation = Quaternion.Slerp(
                     lookRotation,
                     startRotation,
-                    returnBlend
+                    blend
                 );
             }
             else
             {
-                transform.rotation = lookRotation;
+                // 첫 번째 회전에서 자연스럽게 공장 중심 바라보기
+                float blend = Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    Mathf.InverseLerp(0f, 0.2f, progress)
+                );
+
+                transform.rotation = Quaternion.Slerp(
+                    startRotation,
+                    lookRotation,
+                    blend
+                );
             }
 
             yield return null;
         }
 
-        Vector3 finalOffset =
-            Quaternion.Euler(0f, toAngle, 0f) * startOffset;
-
-        Vector3 finalPosition = center + finalOffset;
+        Vector3 finalPosition = GetOrbitPosition(toAngle);
 
         Quaternion finalRotation = returnToOriginalRotation
             ? startRotation
@@ -213,63 +282,7 @@ public class FactoryCameraOrbit : MonoBehaviour
         );
     }
 
-    private IEnumerator Zoom(float angle, bool zoomIn)
-    {
-        Vector3 wideOffset =
-            Quaternion.Euler(0f, angle, 0f) * startOffset;
-
-        float wideDistance = wideOffset.magnitude;
-
-        float closeDistance = Mathf.Clamp(
-            wideDistance - zoomDistance,
-            0.5f,
-            wideDistance
-        );
-
-        Vector3 widePosition = center + wideOffset;
-
-        Vector3 closePosition =
-            center
-            + wideOffset.normalized * closeDistance
-            + Vector3.up * zoomHeight;
-
-        Quaternion wideRotation = Quaternion.LookRotation(
-            center - widePosition
-        );
-
-        Quaternion closeRotation = Quaternion.LookRotation(
-            center - closePosition
-        );
-
-        Vector3 fromPosition = zoomIn
-            ? widePosition
-            : closePosition;
-
-        Vector3 toPosition = zoomIn
-            ? closePosition
-            : widePosition;
-
-        Quaternion fromRotation = zoomIn
-            ? wideRotation
-            : closeRotation;
-
-        Quaternion toRotation = zoomIn
-            ? closeRotation
-            : wideRotation;
-
-        float duration = zoomIn
-            ? zoomInDuration
-            : zoomOutDuration;
-
-        yield return MoveCamera(
-            fromPosition,
-            fromRotation,
-            toPosition,
-            toRotation,
-            duration
-        );
-    }
-
+    // 카메라를 부드럽게 이동
     private IEnumerator MoveCamera(
         Vector3 fromPosition,
         Quaternion fromRotation,
@@ -294,8 +307,15 @@ public class FactoryCameraOrbit : MonoBehaviour
         {
             elapsed += Time.deltaTime;
 
-            float progress = Mathf.Clamp01(elapsed / duration);
-            float smooth = Mathf.SmoothStep(0f, 1f, progress);
+            float progress = Mathf.Clamp01(
+                elapsed / duration
+            );
+
+            float smooth = Mathf.SmoothStep(
+                0f,
+                1f,
+                progress
+            );
 
             transform.position = Vector3.Lerp(
                 fromPosition,
