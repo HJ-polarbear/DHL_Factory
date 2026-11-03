@@ -1,0 +1,29 @@
+{
+    "DHLFactory": {
+        "checkpoints": [
+            {
+                "steps": 35384,
+                "file_path": "results\\test_New2\\DHLFactory\\DHLFactory-35384.onnx",
+                "reward": -0.33575317604355714,
+                "creation_time": 1793335033.1398687,
+                "auxillary_file_paths": [
+                    "results\\test_New2\\DHLFactory\\DHLFactory-35384.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 35384,
+            "file_path": "results\\test_New2\\DHLFactory.onnx",
+            "reward": -0.33575317604355714,
+            "creation_time": 1793335033.1398687,
+            "auxillary_file_paths": [
+                "results\\test_New2\\DHLFactory\\DHLFactory-35384.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.2.0.dev0",
+        "torch_version": "2.1.2+cpu"
+    }
+}
