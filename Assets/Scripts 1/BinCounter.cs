@@ -5,7 +5,7 @@ using UnityEngine;
 public class BinCounter : MonoBehaviour
 {
     [Header("적재함 설정")]
-    public int capacity = 3;
+    public int capacity = 6;
     public float emptyDelay = 1f;
 
     private readonly HashSet<Rigidbody> parcels = new HashSet<Rigidbody>();
@@ -24,7 +24,7 @@ public class BinCounter : MonoBehaviour
         // 같은 박스를 중복으로 세지 않음
         if (!parcels.Add(parcel)) return;
 
-        Debug.Log($"일반 적재함: {Count}/{capacity}");
+        Debug.Log($"적재함: {Count}/{capacity}");
 
         if (IsFull && !isEmptying)
         {
@@ -35,9 +35,10 @@ public class BinCounter : MonoBehaviour
     private IEnumerator EmptyBin()
     {
         isEmptying = true;
-        Debug.Log("일반 적재함이 가득 찼습니다. 회수합니다.");
 
-        // 꽉 찬 모습을 잠깐 보여주기
+        Debug.Log($"적재함이 가득 찼습니다. ({Count}/{capacity}) 회수를 시작합니다.");
+
+        // 6개가 쌓인 모습을 잠시 보여주기
         yield return new WaitForSeconds(emptyDelay);
 
         foreach (Rigidbody parcel in parcels)
@@ -51,6 +52,6 @@ public class BinCounter : MonoBehaviour
         parcels.Clear();
         isEmptying = false;
 
-        Debug.Log("일반 적재함 회수 완료: 0/3");
+        Debug.Log($"적재함 회수 완료: 0/{capacity}");
     }
 }
