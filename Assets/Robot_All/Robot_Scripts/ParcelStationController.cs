@@ -12,6 +12,10 @@ public class ParcelStationController : MonoBehaviour
     public Transform detectionZoneCenter;
     public Vector3 detectionBoxSize = new Vector3(0.5f, 0.3f, 0.5f);
 
+    // [수정됨] AI 비전 모델 연동을 위한 에이전트 레퍼런스 추가
+    [Header("AI 비전 모델 연동")]
+    //public ParcelInspectAgent inspectAgent;      // CNN 모델이 탑재된 에이전트 스크립트 연결
+
     [Header("태그 3가지 분류 설정")]
     public string tagVacuum = "Parcel_Vacuum";    // 태그 1: 흡착형 동작 대상
     public string tagGripper = "Parcel_Gripper";  // 태그 2: 집게형 동작 대상
@@ -27,6 +31,7 @@ public class ParcelStationController : MonoBehaviour
     private string detectedTagType = "";
     private Vector3 lastParcelPosition;
     private float stableTimer = 0f;
+
 
     void Start()
     {
@@ -46,6 +51,108 @@ public class ParcelStationController : MonoBehaviour
         }
     }
 
+    //void CheckAndVerifyTarget()
+    //{
+    //    Collider[] hitColliders = Physics.OverlapBox(
+    //        detectionZoneCenter.position,
+    //        detectionBoxSize * 0.5f,
+    //        detectionZoneCenter.rotation
+    //    );
+
+    //    Rigidbody currentCandidate = null;
+    //    string matchedTag = "";
+
+    //    foreach (var hit in hitColliders)
+    //    {
+    //        // [수정됨] 태그 단독 판단 대신, AI 에이전트가 연결되어 있다면 AI의 예측 결과(LastPrediction)를 우선 반영하도록 로직 추가
+    //        if (inspectAgent != null)
+    //        {
+    //            ParcelCategory category = inspectAgent.LastPrediction;
+
+    //            // AI 분류 결과에 따른 태그/분기 매핑
+    //            if (category == ParcelCategory.Food)
+    //            {
+    //                matchedTag = tagGripper; // 식품류 -> 집게형 로봇 매핑
+    //            }
+    //            else if (category == ParcelCategory.Fragile)
+    //            {
+    //                matchedTag = tagVacuum;  // 파손주의류 -> 흡착형 로봇 매핑
+    //            }
+    //            else
+    //            {
+    //                // 무시(Ignore) 또는 기타 카테고리 처리
+    //                Debug.Log($"[StationController] AI 판정 결과 무시/기타 대상 감지: 컨베이어를 재가동합니다.");
+    //                if (inspectionController != null)
+    //                {
+    //                    inspectionController.ReleaseParcel();
+    //                }
+    //                continue;
+    //            }
+    //        }
+    //        else
+    //        {
+    //            // [기존 호환] AI 에이전트가 연결되지 않은 경우 기존 태그 기반 판정 사용
+    //            if (hit.CompareTag(tagVacuum))
+    //            {
+    //                matchedTag = tagVacuum;
+    //            }
+    //            else if (hit.CompareTag(tagGripper))
+    //            {
+    //                matchedTag = tagGripper;
+    //            }
+    //            else if (hit.CompareTag(tagIgnore))
+    //            {
+    //                Rigidbody ignoreRb = hit.GetComponent<Rigidbody>();
+    //                if (ignoreRb != null)
+    //                {
+    //                    Debug.Log($"[StationController] 무시 태그({tagIgnore}) 감지: 공정을 건너뛰고 컨베이어를 재가동합니다.");
+    //                    if (inspectionController != null)
+    //                    {
+    //                        inspectionController.ReleaseParcel();
+    //                    }
+    //                }
+    //                continue;
+    //            }
+    //            else
+    //            {
+    //                continue;
+    //            }
+    //        }
+    //        if (currentCandidate != null)
+    //    {
+    //        float distanceMoved = Vector3.Distance(currentCandidate.position, lastParcelPosition);
+
+    //        if (distanceMoved < movementThreshold)
+    //        {
+    //            stableTimer += Time.deltaTime;
+
+    //            if (stableTimer >= requiredStableTime)
+    //            {
+    //                detectedParcel = currentCandidate;
+    //                Debug.Log($"[StationController] 목표 정지 감지 [{detectedTagType}]: {detectedParcel.name}. 공정을 시작합니다.");
+
+    //                stableTimer = 0f;
+    //                StartCoroutine(RunStationProcess(detectedParcel, detectedTagType));
+    //                return;
+    //            }
+    //        }
+    //        else
+    //        {
+    //            stableTimer = 0f;
+    //        }
+
+    //        lastParcelPosition = currentCandidate.position;
+    //    }
+    //    else
+    //    {
+    //        stableTimer = 0f;
+    //        if (detectedParcel != null)
+    //        {
+    //            lastParcelPosition = detectedParcel.position;
+    //        }
+    //    }
+    //
+    
     void CheckAndVerifyTarget()
     {
         Collider[] hitColliders = Physics.OverlapBox(
@@ -131,7 +238,6 @@ public class ParcelStationController : MonoBehaviour
             }
         }
     }
-
     IEnumerator RunStationProcess(Rigidbody targetParcel, string tagType)
     {
         isRunning = true;
