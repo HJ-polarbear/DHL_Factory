@@ -27,7 +27,7 @@ public class FingerContact : MonoBehaviour
 
         Rigidbody rb = collision.collider.attachedRigidbody;
         // "Parcel_Gripper" 혹은 "Part" 태그 모두 대응하도록 수정
-        if (rb != null && (rb.CompareTag("Parcel_Gripper") || rb.CompareTag("Part")))
+        if (rb != null && (rb.CompareTag("Parcel_Gripper") ))
         {
             touching = rb;
             lastTouchTime = Time.fixedTime;
