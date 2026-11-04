@@ -7572,16 +7572,24 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 766754086404916988, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 766754086404916988, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 766754086404916988, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.7
+      value: 1.46
       objectReference: {fileID: 0}
     - target: {fileID: 766754086404916988, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.08
+      value: 3.35
       objectReference: {fileID: 0}
     - target: {fileID: 766754086404916988, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.77
+      value: 0.82
       objectReference: {fileID: 0}
     - target: {fileID: 766754086404916988, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7625,11 +7633,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5666458643127759455, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: far clip plane
-      value: 2
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5666458643127759455, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
+      propertyPath: m_TargetDisplay
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5666458643127759455, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
+      propertyPath: m_TargetTexture
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5666458643127759455, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: orthographic size
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 7126558404845996437, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: m_VolumeLayerMask.m_Bits
@@ -19937,6 +19953,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: DashboardCanvas
       objectReference: {fileID: 0}
+    - target: {fileID: 6365812567783317163, guid: c3abaaccd85c3c24a8522c35e0ea243a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6385835368266389785, guid: c3abaaccd85c3c24a8522c35e0ea243a, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -49.7
@@ -21628,7 +21648,7 @@ MonoBehaviour:
   TeamId: 0
   m_UseChildSensors: 1
   m_UseChildActuators: 1
-  m_DeterministicInference: 0
+  m_DeterministicInference: 1
   m_ObservableAttributeHandling: 0
 --- !u!1001 &1723161977
 PrefabInstance:
@@ -22967,7 +22987,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1820389314}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b43eea1621f4d5f4296f8bf161848920, type: 3}
   m_Name: 
@@ -28129,7 +28149,7 @@ GameObject:
   - component: {fileID: 2067598905}
   m_Layer: 0
   m_Name: FoodBox
-  m_TagString: Parcel_Gripper
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -29747,7 +29767,7 @@ GameObject:
   - component: {fileID: 58598658}
   m_Layer: 0
   m_Name: FragileBox
-  m_TagString: Parcel_Vacuum
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -29812,7 +29832,7 @@ GameObject:
   - component: {fileID: 6534085071018614207}
   m_Layer: 0
   m_Name: GeneralBox
-  m_TagString: Parcel_Ignore
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

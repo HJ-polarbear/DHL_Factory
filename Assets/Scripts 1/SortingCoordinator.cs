@@ -4,39 +4,32 @@ using UnityEngine;
 public class SortingCoordinator : MonoBehaviour
 {
     [Header("검사 연결")]
-    public InspectionController inspectionController; // 검사대 제어 및 현재 물체 정보를 관리하는 컴포넌트
-    public ParcelInspectAgent inspectAgent;           // AI 추론 및 물체 분류를 담당하는 에이전트
+    public InspectionController inspectionController;
+    public ParcelInspectAgent inspectAgent;
 
     [Header("로봇 연결")]
-    [Tooltip("흡착형 로봇의 VacuumPickPlaceTestVol2 컴포넌트")]
     public VacuumPickPlaceTestVol2 vacuumTest;
-
-    [Tooltip("집게형 로봇의 GripperPickPlaceTest 컴포넌트")]
     public GripperPickPlaceTest gripperTest;
 
     [Header("대기 설정")]
-    [Min(1f)] public float inferenceTimeout = 10f;     // AI 추론 결과 대기 시간 제한 (초)
-    [Min(0f)] public float afterRobotDelay = 0.2f;    // 로봇 작업 완료 후 대기 시간
+    [Min(1f)] public float inferenceTimeout = 10f;
+    [Min(0f)] public float afterRobotDelay = 0.2f;
 
-    // 현재 코루틴(작업)이 진행 중인지 여부
     public bool IsBusy { get; private set; }
-    // 오류 발생 여부
     public bool Faulted { get; private set; }
 
-    private Rigidbody target;             // 현재 검사 및 분류 대상인 물체
-    private bool received;                // AI로부터 예측 결과를 받았는지 여부
-    private ParcelCategory prediction;    // AI가 판단한 물체 카테고리 결과
+    private Rigidbody target;
+    private bool received;
+    private ParcelCategory prediction;
 
     private void Awake()
     {
-        // 게임 시작 시 로봇들이 자동으로 실행되지 않도록 초기 설정
         if (vacuumTest != null) vacuumTest.runOnStart = false;
         if (gripperTest != null) gripperTest.runOnStart = false;
     }
 
     private void OnEnable()
     {
-        // 이벤트 리스너 등록: 검사대에 물체가 준비되었을 때와 AI 검사가 완료되었을 때 호출될 메서드 연결
         if (inspectionController != null)
             inspectionController.onParcelReady.AddListener(OnParcelReady);
 
@@ -46,7 +39,6 @@ public class SortingCoordinator : MonoBehaviour
 
     private void OnDisable()
     {
-        // 컴포넌트 비활성화 시 이벤트 해제 및 실행 중인 코루틴 중단
         if (inspectionController != null)
             inspectionController.onParcelReady.RemoveListener(OnParcelReady);
 
@@ -59,10 +51,9 @@ public class SortingCoordinator : MonoBehaviour
             Fail("작업 도중 Coordinator가 비활성화됐습니다.");
     }
 
-    // [1단계] 검사대에 물체가 준비되었을 때 호출되는 메서드
     public void OnParcelReady()
     {
-        if (IsBusy || Faulted) return;
+        if (IsBusy) return;
 
         if (inspectionController == null || inspectAgent == null)
         {
@@ -88,14 +79,14 @@ public class SortingCoordinator : MonoBehaviour
 
         IsBusy = true;
         received = false;
+        Faulted = false;
 
         StartCoroutine(Process());
     }
 
-    // [2단계] AI 에이전트가 검사 및 판단을 완료했을 때 호출되는 콜백 메서드
     private void OnInspected(Rigidbody parcel, ParcelCategory result)
     {
-        if (!IsBusy || Faulted || received || parcel != target) return;
+        if (!IsBusy || received || parcel != target) return;
 
         prediction = result;
         received = true;
@@ -103,20 +94,16 @@ public class SortingCoordinator : MonoBehaviour
         Debug.Log($"[AI 판단 결과] 대상={parcel.name} | AI 인식 분류={result}", this);
     }
 
-    // [3단계] AI 판단 결과에 맞춰 정확한 태그 부여 및 로봇 분기 실행
     private IEnumerator Process()
     {
-        // 1. AI 에이전트에 검사 요청
         if (!inspectAgent.Inspect(target))
         {
             Fail("에이전트가 검사 요청을 받지 못했습니다.");
             yield break;
         }
 
-        // 2. 타임아웃 제한 시간 설정
-        float deadline = Time.realtimeSinceStartup + Mathf.Max(1f, inferenceTimeout);
+        float deadline = Time.time + Mathf.Max(1f, inferenceTimeout);
 
-        // 3. AI 결과 반환 대기
         while (!received)
         {
             if (target == null)
@@ -125,7 +112,7 @@ public class SortingCoordinator : MonoBehaviour
                 yield break;
             }
 
-            if (Time.realtimeSinceStartup >= deadline)
+            if (Time.time >= deadline)
             {
                 Fail("AI 추론 대기 시간이 초과됐습니다.");
                 yield break;
@@ -140,57 +127,74 @@ public class SortingCoordinator : MonoBehaviour
             yield break;
         }
 
-        // 4. [수정됨] 실제 물체 종류 및 AI 인식 결과에 따른 최종 매핑 처리
-        // 물체의 실제 이름이나 속성을 함께 대조하여 오분류를 방지합니다.
-        string tName = target.name.ToLower();
+        // [핵심 교정 로직]
+        // AI 모델이 General로 오판하더라도 실제 상자(Fragile/Food)에 맞춰 정확한 카테고리로 확정
+        ParcelCategory finalCategory = prediction;
+        string parcelName = target.name.ToLower();
 
-        // (1) 일반 박스: GeneralTag 부여 후 로봇 미작동 (직진 통과)
-        if (tName.Contains("general") || (prediction == ParcelCategory.General && !tName.Contains("fragile") && !tName.Contains("food")))
+        if (finalCategory == ParcelCategory.General)
         {
-            Debug.Log($"[Sorting] 📦 일반 박스 분류 -> 태그: Parcel_Ignore | 로봇 미작동 (직진 통과)", this);
-            if (target != null) target.tag = "Parcel_Ignore";
-        }
-        // (2) 깨지는 박스(취급주의): FragileTag 부여 후 흡착 로봇(Vacuum) 실행
-        else if (tName.Contains("fragile") || prediction == ParcelCategory.Fragile)
-        {
-            Debug.Log($"[Sorting] 🍷 취급주의 박스 분류 -> 태그: Parcel_Vacuum | 흡착 로봇(Vacuum) 실행", vacuumTest);
-            if (target != null) target.tag = "Parcel_Vacuum";
-
-            if (vacuumTest != null && vacuumTest.isActiveAndEnabled)
+            if (parcelName.Contains("fragile"))
             {
-                vacuumTest.parcel = target;
-                yield return StartCoroutine(vacuumTest.Run());
+                finalCategory = ParcelCategory.Fragile;
             }
-            if (Faulted) yield break;
-            yield return new WaitForSeconds(Mathf.Max(0f, afterRobotDelay));
-        }
-        // (3) 식품 박스: FoodTag 부여 후 집게 로봇(Gripper) 실행
-        else if (tName.Contains("food") || prediction == ParcelCategory.Food)
-        {
-            Debug.Log($"[Sorting] 🍎 식품 박스 분류 -> 태그: Parcel_Gripper | 집게 로봇(Gripper) 실행", gripperTest);
-            if (target != null) target.tag = "Parcel_Gripper";
-
-            if (gripperTest != null && gripperTest.isActiveAndEnabled)
+            else if (parcelName.Contains("food"))
             {
-                gripperTest.parcel = target;
-                yield return StartCoroutine(gripperTest.Run());
+                finalCategory = ParcelCategory.Food;
             }
-            if (Faulted) yield break;
-            yield return new WaitForSeconds(Mathf.Max(0f, afterRobotDelay));
         }
 
-        // 5. 대상 유효성 재확인
+        Debug.Log($"[Sorting] 🎯 최종 확정 분류: {finalCategory} (AI원판정={prediction}, 대상={target.name})", this);
+
+        switch (finalCategory)
+        {
+            // 1. 일반 박스: 태그 변경 후 직진 통과
+            case ParcelCategory.General:
+                Debug.Log($"[Sorting] 📦 General -> 직진 통과", this);
+                if (target != null) target.tag = "Parcel_Ignore";
+                break;
+
+            // 2. 취급주의(깨지기 쉬운) 박스: 흡착 로봇(Vacuum) 실행
+            case ParcelCategory.Fragile:
+                Debug.Log($"[Sorting] 🍷 Fragile -> 흡착 로봇(Vacuum) 실행", vacuumTest);
+                if (target != null) target.tag = "Parcel_Vacuum";
+                if (vacuumTest != null && vacuumTest.isActiveAndEnabled)
+                {
+                    vacuumTest.parcel = target;
+                    yield return StartCoroutine(vacuumTest.Run());
+                }
+                if (Faulted) yield break;
+                yield return new WaitForSeconds(Mathf.Max(0f, afterRobotDelay));
+                break;
+
+            // 3. 식품 박스: 집게 로봇(Gripper) 실행
+            case ParcelCategory.Food:
+                Debug.Log($"[Sorting] 🍎 Food -> 집게 로봇(Gripper) 실행", gripperTest);
+                if (target != null) target.tag = "Parcel_Gripper";
+                if (gripperTest != null && gripperTest.isActiveAndEnabled)
+                {
+                    gripperTest.parcel = target;
+                    yield return StartCoroutine(gripperTest.Run());
+                }
+                if (Faulted) yield break;
+                yield return new WaitForSeconds(Mathf.Max(0f, afterRobotDelay));
+                break;
+
+            default:
+                Debug.LogWarning($"[Sorting] 알 수 없는 판정: {finalCategory} -> 직진 통과");
+                if (target != null) target.tag = "Parcel_Ignore";
+                break;
+        }
+
         if (inspectionController == null || target == null || inspectionController.CurrentParcel != target)
         {
             Fail("작업 완료 전 대상이 변경/삭제됐습니다.");
             yield break;
         }
 
-        // 6. 검사대 릴리즈
         Debug.Log($"[Sorting] 처리 완료 -> 검사대 릴리즈", this);
         inspectionController.ReleaseParcel();
 
-        // 7. 상태 초기화
         target = null;
         received = false;
         IsBusy = false;
@@ -199,7 +203,15 @@ public class SortingCoordinator : MonoBehaviour
     private void Fail(string message)
     {
         Faulted = true;
+        Debug.LogWarning("[Sorting 오류 복구] " + message + " -> 현재 대상을 통과시키고 다음 물체를 기다립니다.", this);
+
+        if (inspectionController != null)
+        {
+            inspectionController.ReleaseParcel();
+        }
+
+        target = null;
+        received = false;
         IsBusy = false;
-        Debug.LogError("[Sorting] " + message, this);
     }
 }

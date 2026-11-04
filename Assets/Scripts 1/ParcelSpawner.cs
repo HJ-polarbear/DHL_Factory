@@ -97,6 +97,13 @@ public class ParcelSpawner : MonoBehaviour
             transform.rotation
         );
 
+        // [추가] 컨베이어에 처음 올라올 때는 무조건 Untagged 상태로 초기화
+        parcel.tag = "Untagged";
+        foreach (Transform child in parcel.transform)
+        {
+            child.gameObject.tag = "Untagged";
+        }
+
         // 실제 박스 크기(Scale)를 0.5로 설정
         parcel.transform.localScale = spawnScale;
         parcel.SetActive(true);
