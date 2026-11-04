@@ -687,6 +687,7 @@ GameObject:
   - component: {fileID: 3428994674301108525}
   - component: {fileID: 524503926116931343}
   - component: {fileID: 2960237462834608559}
+  - component: {fileID: 4126374332386056453}
   m_Layer: 6
   m_Name: FragileBox
   m_TagString: Parcel_Vacuum
@@ -822,6 +823,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &4126374332386056453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8468331124368585724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ef4d5d9c72a01241805e2c216d8664a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ParcelInfo
+  category: 2
 --- !u!1 &8931321164227033985
 GameObject:
   m_ObjectHideFlags: 0

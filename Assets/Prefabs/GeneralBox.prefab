@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 4170473288069279634}
   - component: {fileID: 622446202468525074}
   - component: {fileID: 5750533139362577016}
+  - component: {fileID: 4438000262681503637}
   m_Layer: 6
   m_Name: GeneralBox
   m_TagString: Parcel_Ignore
@@ -143,6 +144,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &4438000262681503637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1988912990157572224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ef4d5d9c72a01241805e2c216d8664a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ParcelInfo
+  category: 0
 --- !u!1 &2493961274276145445
 GameObject:
   m_ObjectHideFlags: 0
