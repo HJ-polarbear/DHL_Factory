@@ -14,6 +14,9 @@ public class FactoryProcessController : MonoBehaviour
     public Button resetButton;
     public TMP_Text resetButtonText;
 
+    [Header("상태 표시등 연결")]
+    public StatusIndicatorController statusIndicator;
+
     [Header("오류 메시지")]
     public TMP_Text errorMessageText;
 
@@ -37,9 +40,14 @@ public class FactoryProcessController : MonoBehaviour
 
     private bool isRunning;
 
+    // 최초 공정 시작 여부
+    private bool hasStarted;
+
     private void Awake()
     {
         isRunning = !startPaused;
+        hasStarted = isRunning;
+
         Time.timeScale = isRunning ? 1f : 0f;
     }
 
@@ -52,11 +60,21 @@ public class FactoryProcessController : MonoBehaviour
             resetButton.onClick.AddListener(ResetProcess);
 
         UpdateButtonUI();
-        SetErrorMessage("✓ 오류 없음", normalColor);
         UpdateOEEState();
+        UpdateStatusIndicator();
+
+        SetErrorMessage("✓ 오류 없음", normalColor);
 
         if (dashboardStats != null)
+        {
             dashboardStats.OnParcelProcessed += HandleParcelProcessed;
+        }
+
+        Debug.Log(
+            isRunning
+                ? "[공정 제어] 시작 시 자동 가동"
+                : "[공정 제어] 공정 시작 대기"
+        );
     }
 
     private void OnDestroy()
@@ -68,57 +86,127 @@ public class FactoryProcessController : MonoBehaviour
             resetButton.onClick.RemoveListener(ResetProcess);
 
         if (dashboardStats != null)
+        {
             dashboardStats.OnParcelProcessed -= HandleParcelProcessed;
+        }
 
         Time.timeScale = 1f;
     }
 
     // ======================================
-    // 공정 시작 / 일시정지
+    // 공정 시작 / 일시정지 토글
     // ======================================
 
     public void ToggleProcess()
     {
         if (isRunning)
+        {
             PauseProcess();
+        }
         else
+        {
             StartProcess();
+        }
     }
+
+    // ======================================
+    // 공정 시작 및 재개
+    // ======================================
 
     public void StartProcess()
     {
+        bool isResume = hasStarted;
+
         isRunning = true;
+        hasStarted = true;
+
         Time.timeScale = 1f;
 
         UpdateButtonUI();
         UpdateOEEState();
+        UpdateStatusIndicator();
 
-        Debug.Log("[공정 제어] 공정 시작");
+        Debug.Log(
+            isResume
+                ? "[공정 제어] 공정 재개"
+                : "[공정 제어] 공정 시작"
+        );
     }
+
+    // ======================================
+    // 공정 일시정지
+    // ======================================
 
     public void PauseProcess()
     {
         isRunning = false;
+
         Time.timeScale = 0f;
 
         UpdateButtonUI();
         UpdateOEEState();
+        UpdateStatusIndicator();
 
         Debug.Log("[공정 제어] 공정 일시정지");
     }
 
     // ======================================
-    // 초기화
+    // 공정 초기화
     // ======================================
 
     public void ResetProcess()
     {
         Debug.Log("[공정 제어] 공정 초기화");
 
+        isRunning = false;
+        hasStarted = false;
+
+        // 초기화 직전 대기 상태 표시
+        if (statusIndicator != null)
+        {
+            statusIndicator.SetWaiting();
+        }
+
         Time.timeScale = 1f;
 
         Scene currentScene = SceneManager.GetActiveScene();
+
         SceneManager.LoadScene(currentScene.name);
+    }
+
+    // ======================================
+    // 상태 표시등 자동 연동
+    // ======================================
+
+    private void UpdateStatusIndicator()
+    {
+        if (statusIndicator == null)
+        {
+            Debug.LogWarning(
+                "[공정 제어] Status Indicator가 연결되지 않았습니다."
+            );
+
+            return;
+        }
+
+        // 현재 공정 가동 중
+        if (isRunning)
+        {
+            statusIndicator.SetRunning();
+
+            return;
+        }
+
+        // 공정을 한 번도 시작하지 않은 상태
+        if (!hasStarted)
+        {
+            statusIndicator.SetWaiting();
+
+            return;
+        }
+
+        // 공정을 시작한 적이 있고 현재 정지 상태
+        statusIndicator.SetPaused();
     }
 
     // ======================================
@@ -130,15 +218,23 @@ public class FactoryProcessController : MonoBehaviour
         if (startPauseButtonText != null)
         {
             startPauseButtonText.text =
-                isRunning ? "Ⅱ 일시정지" : "▶ 공정 시작";
+                isRunning
+                    ? "Ⅱ 일시정지"
+                    : "▶ 공정 시작";
         }
 
         if (startPauseButton != null)
         {
-            Image image = startPauseButton.GetComponent<Image>();
+            Image image =
+                startPauseButton.GetComponent<Image>();
 
             if (image != null)
-                image.color = isRunning ? pauseColor : startColor;
+            {
+                image.color =
+                    isRunning
+                        ? pauseColor
+                        : startColor;
+            }
         }
 
         if (resetButtonText != null)
@@ -148,10 +244,13 @@ public class FactoryProcessController : MonoBehaviour
 
         if (resetButton != null)
         {
-            Image image = resetButton.GetComponent<Image>();
+            Image image =
+                resetButton.GetComponent<Image>();
 
             if (image != null)
+            {
                 image.color = resetColor;
+            }
         }
     }
 
@@ -162,7 +261,9 @@ public class FactoryProcessController : MonoBehaviour
     private void UpdateOEEState()
     {
         if (factoryOEE != null)
+        {
             factoryOEE.SetDowntime(!isRunning);
+        }
     }
 
     // ======================================
@@ -210,7 +311,10 @@ public class FactoryProcessController : MonoBehaviour
     // 오류 메시지
     // ======================================
 
-    private void SetErrorMessage(string message, Color color)
+    private void SetErrorMessage(
+        string message,
+        Color color
+    )
     {
         if (errorMessageText == null)
             return;

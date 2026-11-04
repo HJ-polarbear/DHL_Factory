@@ -10026,6 +10026,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 906325921}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &910706692
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 910706694}
+  - component: {fileID: 910706693}
+  m_Layer: 0
+  m_Name: StatusIndicatorController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &910706693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910706692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4552c6d9fee849a499f857f13e24c850, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusIndicatorController
+  statusText: {fileID: 1585370914925589725}
+  dotSize: 18
+  dotOffset: {x: -22, y: 10}
+  runningBlinkSpeed: 0.7
+  pausedBlinkSpeed: 1.5
+  waitingColor: {r: 0.55, g: 0.6, b: 0.65, a: 1}
+  runningColor: {r: 0.15, g: 0.95, b: 0.45, a: 1}
+  pausedColor: {r: 1, g: 0.8, b: 0.15, a: 1}
+  currentState: 0
+--- !u!4 &910706694
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910706692}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 3.96508, y: 1.71, z: 2.36144}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6238837729164746946}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &919999977
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14782,7 +14835,7 @@ MonoBehaviour:
   - {fileID: 8468331124368585724, guid: bab417155fc409a418b964a26493820a, type: 3}
   - {fileID: 4909275062482731306, guid: 9262fb634989b4147b005adf4c823d18, type: 3}
   continuousSpawn: 1
-  spawnInterval: 8
+  spawnInterval: 5
   spawnImmediately: 1
   checkBoxSize: {x: 3, y: 0.7, z: 0.7}
   parcelLayer:
@@ -39910,7 +39963,7 @@ MonoBehaviour:
   parcel: {fileID: 0}
   placePoint: {fileID: 653739421}
   runOnStart: 0
-  dashboardStats: {fileID: 0}
+  dashboardStats: {fileID: 7666169882546735363}
   speed: 3
   approachHeight: 0.25
   gripHeightOffset: -0.05
@@ -50610,6 +50663,7 @@ MonoBehaviour:
   startPauseButtonText: {fileID: 8737155424770393829}
   resetButton: {fileID: 1602496501331480913}
   resetButtonText: {fileID: 4766552432256204291}
+  statusIndicator: {fileID: 910706693}
   errorMessageText: {fileID: 3490103429063588329}
   dashboardStats: {fileID: 7666169882546735363}
   factoryOEE: {fileID: 3701005287071709129}
@@ -51544,6 +51598,7 @@ Transform:
   - {fileID: 2880419321063721370}
   - {fileID: 1327462053416686879}
   - {fileID: 1608763370374532973}
+  - {fileID: 910706694}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!222 &6240721163117260533
@@ -52676,7 +52731,7 @@ MonoBehaviour:
   parcel: {fileID: 0}
   placePoint: {fileID: 718521810}
   runOnStart: 0
-  dashboardStats: {fileID: 0}
+  dashboardStats: {fileID: 7666169882546735363}
   speed: 3
   approachHeight: 0.25
   pressDepth: 0.005
@@ -64290,7 +64345,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &9029305278187610853
 RectTransform:
   m_ObjectHideFlags: 0
@@ -64994,8 +65049,8 @@ SceneRoots:
   - {fileID: 7838013531323923420}
   - {fileID: 2784505713204496236}
   - {fileID: 2829203319226861453}
-  - {fileID: 3292697499096384735}
   - {fileID: 1820389316}
+  - {fileID: 3292697499096384735}
   - {fileID: 653739421}
   - {fileID: 718521810}
   - {fileID: 1719397388}
