@@ -50,6 +50,32 @@ public class ParcelBeltCounter : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        // 1. 컨베이어 벨트(Banda)나 Untagged 배경 물체는 무시
+        if (other.name.Contains("Banda") || other.CompareTag("Untagged"))
+        {
+            // Rigidbody가 있더라도 이름이나 태그가 벨트인 경우 제외
+            if (other.attachedRigidbody == null ||
+                other.attachedRigidbody.name.Contains("Banda") ||
+                other.attachedRigidbody.CompareTag("Untagged"))
+            {
+                return;
+            }
+        }
+
+        Rigidbody parcel = other.attachedRigidbody;
+
+        // 2. 물리 상자가 아니면 무시
+        if (parcel == null)
+        {
+            return;
+        }
+
+        // 3. 대상이 지정된 택배 태그 중 하나라도 가지고 있는지 확인 (택배가 아니면 무시)
+        if (!IsAnyParcelTag(other, parcel))
+        {
+            return;
+        }
+
         if (showDebugLogs)
         {
             Debug.Log(
@@ -58,24 +84,6 @@ public class ParcelBeltCounter : MonoBehaviour
                 $"감지 오브젝트: {other.gameObject.name}, " +
                 $"Tag: {other.tag}"
             );
-        }
-
-        Rigidbody parcel = other.attachedRigidbody;
-
-        if (parcel == null)
-        {
-            if (showDebugLogs)
-            {
-                Debug.LogWarning(
-                    $"[벨트 감지] {other.name}: Rigidbody를 찾지 못했습니다."
-                );
-            }
-
-            return;
-        }
-
-        if (showDebugLogs)
-        {
             Debug.Log(
                 $"[벨트 감지] Rigidbody 확인: " +
                 $"{parcel.name}, Tag: {parcel.tag}"
@@ -87,10 +95,10 @@ public class ParcelBeltCounter : MonoBehaviour
             Debug.LogError(
                 "[벨트 감지] Dashboard Stats 연결이 없습니다!"
             );
-
             return;
         }
 
+        // 4. 이 센서가 담당하는 종류의 택배가 맞는지 검사
         if (!IsCorrectParcel(other, parcel))
         {
             if (showDebugLogs)
@@ -102,27 +110,24 @@ public class ParcelBeltCounter : MonoBehaviour
                     $"Rigidbody 태그: {parcel.tag}"
                 );
             }
-
             return;
         }
 
+        // 5. 대시보드 통계 등록
         DashboardStatsController.ParcelType dashboardType;
 
         switch (parcelType)
         {
             case ParcelType.General:
-                dashboardType =
-                    DashboardStatsController.ParcelType.General;
+                dashboardType = DashboardStatsController.ParcelType.General;
                 break;
 
             case ParcelType.Fragile:
-                dashboardType =
-                    DashboardStatsController.ParcelType.Fragile;
+                dashboardType = DashboardStatsController.ParcelType.Fragile;
                 break;
 
             case ParcelType.Food:
-                dashboardType =
-                    DashboardStatsController.ParcelType.Food;
+                dashboardType = DashboardStatsController.ParcelType.Food;
                 break;
 
             default:
@@ -148,10 +153,14 @@ public class ParcelBeltCounter : MonoBehaviour
         }
     }
 
-    private bool IsCorrectParcel(
-        Collider other,
-        Rigidbody parcel
-    )
+    private bool IsAnyParcelTag(Collider other, Rigidbody parcel)
+    {
+        return HasTag(other, parcel, generalTag) ||
+               HasTag(other, parcel, fragileTag) ||
+               HasTag(other, parcel, foodTag);
+    }
+
+    private bool IsCorrectParcel(Collider other, Rigidbody parcel)
     {
         string expectedTag = "";
 
@@ -173,7 +182,12 @@ public class ParcelBeltCounter : MonoBehaviour
         if (string.IsNullOrEmpty(expectedTag))
             return false;
 
-        return parcel.CompareTag(expectedTag)
-            || other.CompareTag(expectedTag);
+        return HasTag(other, parcel, expectedTag);
+    }
+
+    private bool HasTag(Collider other, Rigidbody parcel, string tag)
+    {
+        if (string.IsNullOrEmpty(tag)) return false;
+        return (parcel != null && parcel.CompareTag(tag)) || other.CompareTag(tag);
     }
 }
