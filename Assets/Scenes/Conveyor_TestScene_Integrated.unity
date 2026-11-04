@@ -7623,6 +7623,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Inspection Camera
       objectReference: {fileID: 0}
+    - target: {fileID: 4827660086610740290, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5666458643127759455, guid: 92e4af2309b39f44da6c92b17b3e8350, type: 3}
       propertyPath: m_Enabled
       value: 1
