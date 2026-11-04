@@ -1,8 +1,18 @@
 using UnityEngine;
 
+/// <summary>
+/// 컨베이어 시작 위치에 택배를 일정 간격으로 생성한다.
+///
+/// [변경]
+/// - 박스 크기를 덮어쓰지 않는다. 프리팹에 저장된 크기를 그대로 사용한다.
+///   (AI 학습 때 에이전트가 프리팹 크기 그대로 박스를 만들었기 때문에, 공정에서도 같아야 함)
+///   → Parcel Prefabs에는 에이전트 학습용과 같은 Assets/Prefabs 프리팹을 연결할 것
+/// - 생성 순서 번호를 이름에 붙인다. (예: FoodBox_007)
+///   생성 로그와 검사·AI 판정 로그에서 같은 박스인지 바로 확인할 수 있다.
+/// </summary>
 public class ParcelSpawner : MonoBehaviour
 {
-    [Header("생성할 택배 프리팹")]
+    [Header("생성할 택배 프리팹 (에이전트 학습용과 같은 Assets/Prefabs 프리팹)")]
     public GameObject[] parcelPrefabs;
 
     [Header("생성 설정")]
@@ -13,24 +23,24 @@ public class ParcelSpawner : MonoBehaviour
     [Min(0.1f)]
     public float spawnInterval = 3f;
 
-    [Tooltip("생성되는 박스의 실제 크기 (기본값 0.5)")]
-    public Vector3 spawnScale = new Vector3(0.5f, 0.5f, 0.5f);
-
     [Tooltip("켜면 시작하자마자 첫 박스를 생성합니다.")]
     public bool spawnImmediately = false;
 
     [Header("생성 위치 확인")]
+    [Tooltip("생성 위치에 이미 박스가 있으면 생성하지 않습니다.")]
     public Vector3 checkBoxSize = new Vector3(0.5f, 0.5f, 0.5f);
     public LayerMask parcelLayer;
 
     private float timer;
     private bool paused;
     private bool singleSpawnCompleted;
+    private int spawnCount;
 
     private void Start()
     {
         timer = 0f;
         singleSpawnCompleted = false;
+        spawnCount = 0;
 
         if (!HasValidPrefab())
         {
@@ -78,6 +88,7 @@ public class ParcelSpawner : MonoBehaviour
     {
         if (paused) return false;
 
+        // 생성 위치에 이미 박스가 있으면 생성하지 않음
         bool occupied = Physics.CheckBox(
             transform.position,
             GetHalfExtents(),
@@ -97,18 +108,25 @@ public class ParcelSpawner : MonoBehaviour
             transform.rotation
         );
 
-        // [추가] 컨베이어에 처음 올라올 때는 무조건 Untagged 상태로 초기화
+        // 생성 순서 번호를 붙여 로그 추적을 쉽게 함 (예: FoodBox_007)
+        spawnCount++;
+        parcel.name = $"{prefab.name}_{spawnCount:D3}";
+
+        // 컨베이어에 처음 올라올 때는 Untagged로 초기화
+        // (태그는 AI 판정 후 SortingCoordinator가 붙임)
         parcel.tag = "Untagged";
         foreach (Transform child in parcel.transform)
         {
             child.gameObject.tag = "Untagged";
         }
 
-        // 실제 박스 크기(Scale)를 0.5로 설정
-        parcel.transform.localScale = spawnScale;
+        // 박스 크기는 프리팹 그대로 사용 (덮어쓰지 않음)
         parcel.SetActive(true);
 
-        Debug.Log($"[ParcelSpawner] 택배 생성: {parcel.name} (크기: {spawnScale})", parcel);
+        Debug.Log(
+            $"[ParcelSpawner] 택배 생성: {parcel.name} (크기: {parcel.transform.localScale})",
+            parcel
+        );
         return true;
     }
 
