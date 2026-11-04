@@ -19342,7 +19342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b43eea1621f4d5f4296f8bf161848920, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParcelStationController
-  inspectionController: {fileID: 0}
+  inspectionController: {fileID: 2048856528}
   vacuumTest: {fileID: 6586035766788214650}
   gripperTest: {fileID: 3754159419358825055}
   detectionZoneCenter: {fileID: 0}
