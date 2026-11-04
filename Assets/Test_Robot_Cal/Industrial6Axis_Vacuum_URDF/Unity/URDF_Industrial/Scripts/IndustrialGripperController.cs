@@ -78,7 +78,7 @@ public class IndustrialGripperController : MonoBehaviour
         // 과부하로 조인트가 끊어졌으면 잡은 상태 해제
         if (HeldPart != null && joint == null)
         {
-            Debug.LogWarning("[Gripper] 조인트가 끊어져 박스를 놓쳤습니다.");
+            Debug.LogWarning("[Gripper] 경고: FixedJoint 조인트가 끊어져 박스를 놓쳤습니다!");
             HeldPart = null;
             LastGraspOk = false;
         }
@@ -104,9 +104,15 @@ public class IndustrialGripperController : MonoBehaviour
 
         if (left == null || right == null)
         {
-            Debug.LogError("[Gripper] left 또는 right ArticulationBody가 지정되지 않았습니다!");
+            Debug.LogError("[Gripper] 파지 실패: left 또는 right ArticulationBody가 지정되지 않았습니다!");
             IsBusy = false;
             yield break;
+        }
+
+        // --- [디버그 추가] 센서 연결 상태 점검 ---
+        if (rightContact == null || leftContact == null)
+        {
+            Debug.LogWarning("[Gripper] 주의: FingerContact 센서(rightContact 또는 leftContact)가 연결되지 않았습니다. 접촉 감지가 작동하지 않을 수 있습니다.");
         }
 
         float startOpening = opening;
@@ -114,6 +120,8 @@ public class IndustrialGripperController : MonoBehaviour
         float t = 0f;
         float extra = 0f;
         bool touched = false;
+
+        Debug.Log($"[Gripper] 닫기(Grasp) 동작 시작. 초기 폭: {startOpening:F3}m");
 
         while (t < 1f || extra < extraCloseTime)
         {
@@ -126,7 +134,8 @@ public class IndustrialGripperController : MonoBehaviour
             {
                 extra += Time.fixedDeltaTime;
             }
-            // [추가] 닫기 시작 후 최소 0.1초가 지나기 전에는 센서 감지를 무시하여 초기 겹침 오작동 방지
+
+            // 닫기 시작 후 최소 0.1초가 지나기 전에는 센서 감지를 무시하여 초기 겹침 오작동 방지
             if (t > 0.1f)
             {
                 // 널 체크가 포함된 접촉 센서 확인
@@ -137,21 +146,48 @@ public class IndustrialGripperController : MonoBehaviour
                 if (rR != null && rR == rL)
                 {
                     touched = true;
+                    Debug.Log($"[Gripper] 물체 접촉 감지 성공! (오른쪽 센서: {rR.name}, 왼쪽 센서: {rL.name})");
+
                     // 현재 벌어져 있는 포지션으로 opening 고정 (더 조이지 않음)
-                    Debug.Log($"[Debug] 물체 접촉 감지됨! rR: {rR.name}, rL: {rL.name}"); // 이 로그가 즉시 찍히는지 확인
                     opening = Mathf.Abs(left.jointPosition[0]) + Mathf.Abs(right.jointPosition[0]);
+
                     LastGraspOk = Attach(rR);
                     if (LastGraspOk)
-                        Debug.Log("[IndustrialGripper] 물체 접촉 감지 완료. 파지 위치 고정 및 닫기 중지.");
+                    {
+                        Debug.Log($"[IndustrialGripper] 파지 완료: '{rR.name}' 고정 성공 및 닫기 동작 중지.");
+                    }
+                    else
+                    {
+                        Debug.LogError($"[IndustrialGripper] 파지 오류: 접촉은 감지되었으나 Attach(고정) 과정에서 실패했습니다.");
+                    }
                     break;
+                }
+                else if (rR != null || rL != null)
+                {
+                    // 한쪽만 닿았거나 서로 다른 물체에 닿은 경우 (디버깅용 로그)
+                    // 너무 자주 찍히지 않도록 특정 조건이나 프레임에 제한을 둘 수도 있으나, 문제 추적용으로 남김
                 }
             }
             yield return new WaitForFixedUpdate();
         }
 
+        // 타임아웃(지정 시간 동안 양쪽 모두 정상 접촉하지 못함) 시 처리
         if (!LastGraspOk)
         {
-            Debug.Log(touched ? "[IndustrialGripper] 실패: 고정 실패" : "[IndustrialGripper] 실패: 양쪽 손가락이 동시에 닿지 않음");
+            if (touched)
+            {
+                LastGraspInfo = "고정 실패 (조인트 생성 오류)";
+                Debug.LogWarning("[IndustrialGripper] 파지 실패: 센서는 감지되었으나 최종 고정(Attach) 단계에서 실패했습니다.");
+            }
+            else
+            {
+                LastGraspInfo = "동시 접촉 실패 (타임아웃)";
+                Debug.LogWarning($"[IndustrialGripper] 파지 실패: 양쪽 손가락이 동시에 올바른 물체에 닿지 않았습니다. (지정 시간 초과, 센서 상태 - Right: {(rightContact != null ? rightContact.TouchingPart?.name : "Null")}, Left: {(leftContact != null ? leftContact.TouchingPart?.name : "Null")})");
+            }
+        }
+        else
+        {
+            LastGraspInfo = "성공";
         }
 
         IsBusy = false;
@@ -163,6 +199,7 @@ public class IndustrialGripperController : MonoBehaviour
         if (IsBusy) yield break;
         IsBusy = true;
 
+        Debug.Log("[Gripper] 열기(Open) 및 부품 분리 시작");
         Detach();
 
         float startOpening = opening;
@@ -178,18 +215,28 @@ public class IndustrialGripperController : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
         IsBusy = false;
+        Debug.Log("[Gripper] 열기 동작 완료");
     }
 
     // FixedJoint로 박스를 그리퍼 본체에 고정 (흡착 그리퍼와 같은 방식)
     bool Attach(Rigidbody part)
     {
-        if (part == null) return false;
-        if (gripperBody == null)
+        if (part == null)
         {
-            Debug.LogError("[Gripper] gripperBody가 없어 박스를 고정할 수 없습니다.");
+            Debug.LogError("[Gripper] Attach 실패: 전달된 Rigidbody 물체가 Null입니다.");
             return false;
         }
-        if (joint != null) Destroy(joint);   // 혹시 남아 있는 조인트 정리
+        if (gripperBody == null)
+        {
+            Debug.LogError("[Gripper] Attach 실패: gripperBody(본체 링크)가 지정되지 않아 FixedJoint를 생성할 수 없습니다.");
+            return false;
+        }
+
+        if (joint != null)
+        {
+            Debug.LogWarning("[Gripper] 기존에 남아있던 조인트를 파기하고 새로운 조인트를 연결합니다.");
+            Destroy(joint);   // 혹시 남아 있는 조인트 정리
+        }
 
         HeldPart = part;
 
@@ -200,28 +247,42 @@ public class IndustrialGripperController : MonoBehaviour
 
         // 그리퍼 본체와 FixedJoint로 연결 (흡착 그리퍼와 동일)
         joint = part.gameObject.AddComponent<FixedJoint>();
+        if (joint == null)
+        {
+            Debug.LogError($"[Gripper] Attach 실패: '{part.name}'에 FixedJoint 컴포넌트를 추가하지 못했습니다.");
+            return false;
+        }
+
         joint.connectedArticulationBody = gripperBody;
         joint.enableCollision = false;
 
-        Debug.Log("[Gripper] 부품 부착 성공");
+        Debug.Log($"[Gripper] 부품 부착 성공: '{part.name}'이(가) 그리퍼 본체('{gripperBody.name}')와 FixedJoint로 연결되었습니다.");
         return true;
     }
 
     void Detach()
     {
-        // 조인트만 제거하면 박스는 그대로 떨어짐
-        if (joint != null) Destroy(joint);
+        if (joint != null)
+        {
+            Destroy(joint);
+            Debug.Log("[Gripper] FixedJoint 파괴(분리) 완료");
+        }
         joint = null;
 
-        if (HeldPart == null) return;
+        if (HeldPart == null)
+        {
+            Debug.Log("[Gripper] Detach 시점에 잡고 있던 부품(HeldPart)이 이미 없습니다.");
+        }
+        else
+        {
+            Debug.Log($"[Gripper] 부품 분리 완료: {HeldPart.name}");
+        }
+
         HeldPart = null;
 
         if (rightContact != null) rightContact.Clear();
         if (leftContact != null) leftContact.Clear();
-
-        Debug.Log("[Gripper] 부품 분리 완료");
     }
 
     public void SetOpening(float meters) => opening = meters;
 }
-

@@ -102,12 +102,37 @@ public class VacuumGripper : MonoBehaviour
         foreach (var kv in hitsPerBody) if (kv.Value > bestHits) { best = kv.Key; bestHits = kv.Value; }
         lastCoverage = bestHits / (float)total;
 
-        if (best == null) { lastResult = "FAIL: 흡착면 아래에 물체 없음"; return; }
-        if (lastCoverage < minCoverage) { lastResult = $"FAIL: 접촉 부족 {lastCoverage:P0} (모서리/작은 면)"; return; }
+        // --- 실패 사유별 상세 디버그 로그 추가 ---
+        if (best == null)
+        {
+            lastResult = "FAIL: 흡착면 아래에 물체 없음";
+            Debug.LogWarning($"[VacuumGripper] 흡착 실패: 패드 아래에 감지된 Rigidbody 물체가 없습니다. (TCP 위치: {tcp.position}, 탐색 거리: {maxGap})");
+            return;
+        }
+
+        if (lastCoverage < minCoverage)
+        {
+            lastResult = $"FAIL: 접촉 부족 {lastCoverage:P0} (모서리/작은 면)";
+            Debug.LogWarning($"[VacuumGripper] 흡착 실패 [{best.name}]: 접촉 면적이 부족합니다. (현재 접촉률: {lastCoverage:P0} < 최소 기준: {minCoverage:P0})");
+            return;
+        }
+
         float tilt = Vector3.Angle(-dir, normalSum[best].normalized);
-        if (tilt > maxTiltDeg) { lastResult = $"FAIL: 면 기울기 {tilt:F1}도 > {maxTiltDeg}도"; return; }
+        if (tilt > maxTiltDeg)
+        {
+            lastResult = $"FAIL: 면 기울기 {tilt:F1}도 > {maxTiltDeg}도";
+            Debug.LogWarning($"[VacuumGripper] 흡착 실패 [{best.name}]: 물체 표면이 너무 기울어졌습니다. (측정 기울기: {tilt:F1}도 > 허용 최대: {maxTiltDeg}도)");
+            return;
+        }
+
         float weightN = best.mass * Physics.gravity.magnitude;
-        if (weightN > liftForceN) { lastResult = $"FAIL: 무게 {weightN:F0}N > 흡착력 {liftForceN}N"; return; }
+        if (weightN > liftForceN)
+        {
+            lastResult = $"FAIL: 무게 {weightN:F0}N > 흡착력 {liftForceN}N";
+            Debug.LogWarning($"[VacuumGripper] 흡착 실패 [{best.name}]: 물체가 너무 무겁습니다. (물체 무게: {weightN:F1}N > 최대 흡착력: {liftForceN}N)");
+            return;
+        }
+        // ----------------------------------------
 
         joint = best.gameObject.AddComponent<FixedJoint>();
         joint.connectedArticulationBody = gripperBody;
@@ -115,6 +140,7 @@ public class VacuumGripper : MonoBehaviour
         joint.enableCollision = false;
         held = best; holding = true;
         lastResult = $"OK: {best.name} 흡착 (접촉 {lastCoverage:P0}, 기울기 {tilt:F1}도)";
+        Debug.Log($"[VacuumGripper] 흡착 성공: {best.name} (접촉률: {lastCoverage:P0}, 기울기: {tilt:F1}도)");
     }
 
     public void Release()
