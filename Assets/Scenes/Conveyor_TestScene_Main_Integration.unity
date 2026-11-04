@@ -2909,7 +2909,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &225321065
 Transform:
   m_ObjectHideFlags: 0
@@ -14749,7 +14749,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1366912587
 Transform:
   m_ObjectHideFlags: 0
@@ -18286,7 +18286,7 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  processMode: 0
+  processMode: 1
   generalPrefab: {fileID: 4438000262681503637, guid: f7c6fb1c1f045d8429e6641550d5ef10, type: 3}
   foodPrefab: {fileID: 8013740253686120399, guid: 9262fb634989b4147b005adf4c823d18, type: 3}
   fragilePrefab: {fileID: 4126374332386056453, guid: bab417155fc409a418b964a26493820a, type: 3}
@@ -18321,9 +18321,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: e042c21dd44902341936f474a558fe95, type: 3}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 2
   m_BehaviorName: DHLFactory
   TeamId: 0
   m_UseChildSensors: 1
@@ -21999,7 +21999,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2048856526
 Transform:
   m_ObjectHideFlags: 0
@@ -48996,7 +48996,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!108 &5657699916936936179
 Light:
   m_ObjectHideFlags: 0
