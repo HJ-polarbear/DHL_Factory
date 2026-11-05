@@ -39852,9 +39852,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactoryOEEController
   dashboardStats: {fileID: 7666169882546735363}
   oeeText: {fileID: 1341100297806235656}
-  idealCycleTime: 15
+  idealCycleTime: 7.5
   isDowntime: 0
   updateInterval: 0.5
+  warnWhenPerformanceOver100: 1
   totalTime: 0
   operatingTime: 0
   downtime: 0
@@ -39862,6 +39863,7 @@ MonoBehaviour:
   performance: 0
   quality: 0
   oee: 0
+  rawPerformance: 0
 --- !u!33 &3706068047200046112
 MeshFilter:
   m_ObjectHideFlags: 0
