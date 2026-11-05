@@ -117,6 +117,21 @@ public class DashboardDetailStatsController : MonoBehaviour
         if (factoryOEE == null)
             return;
 
+        // [변경] 공정 시작 전(측정 시간 0)에는 숫자 대신 "--" 표시
+        if (!factoryOEE.HasData)
+        {
+            if (oeeRing != null) oeeRing.SetOEE(0f);
+            if (oeeValueText != null) oeeValueText.text = "--";
+            if (availabilityValue != null) availabilityValue.text = "--";
+            if (performanceValue != null) performanceValue.text = "--";
+            if (qualityValue != null) qualityValue.text = "--";
+
+            UpdateBar(availabilityBar, availabilityBarBG, 0f);
+            UpdateBar(performanceBar, performanceBarBG, 0f);
+            UpdateBar(qualityBar, qualityBarBG, 0f);
+            return;
+        }
+
         float oee =
             Mathf.Clamp(factoryOEE.OEE, 0f, 100f);
 
